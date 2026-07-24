@@ -1,12 +1,19 @@
 package services
 
 import (
+	"crypto/ed25519"
+	"crypto/rand"
+	"encoding/pem"
+	"errors"
 	"io"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
 	gssh "github.com/gliderlabs/ssh"
 	"github.com/stevenssparks/webhead/device"
+	xssh "golang.org/x/crypto/ssh"
 )
 
 // StartSSH runs the gliderlabs SSH server (blocking; run it in a goroutine).
@@ -14,7 +21,7 @@ import (
 // each session gets a copy bound to st. The session is driven as a raw
 // interactive terminal so it works with a real `ssh` client (PTY, CR line
 // endings, local echo).
-func StartSSH(st *device.State, addr, user, pass string, shellProto Shell) error {
+func StartSSH(st *device.State, addr, user, pass, hostKeyPath string, shellProto Shell) error {
 	handler := func(s gssh.Session) {
 		st.SSHConnect()
 		defer st.SSHDisconnect()
@@ -81,7 +88,41 @@ func StartSSH(st *device.State, addr, user, pass string, shellProto Shell) error
 			return ctx.User() == user && given == pass
 		},
 	}
+	// Use a stable, persisted host key so the client doesn't see a new key on
+	// every launch (which reads as a MITM / host-key-mismatch error).
+	if signer, err := loadOrCreateHostKey(hostKeyPath); err == nil {
+		server.AddHostKey(signer)
+	}
 	return server.ListenAndServe()
+}
+
+// loadOrCreateHostKey returns a persistent ed25519 SSH host key, generating and
+// saving one at path on first use. If path is unusable it returns an error and
+// the server falls back to gliderlabs' ephemeral key.
+func loadOrCreateHostKey(path string) (gssh.Signer, error) {
+	if path == "" {
+		return nil, errors.New("no host key path")
+	}
+	if b, err := os.ReadFile(path); err == nil {
+		if s, err := xssh.ParsePrivateKey(b); err == nil {
+			return s, nil
+		}
+	}
+	_, priv, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		return nil, err
+	}
+	blk, err := xssh.MarshalPrivateKey(priv, "webhead")
+	if err != nil {
+		return nil, err
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+		return nil, err
+	}
+	if err := os.WriteFile(path, pem.EncodeToMemory(blk), 0600); err != nil {
+		return nil, err
+	}
+	return xssh.NewSignerFromKey(priv)
 }
 
 // writeOut writes s, converting "\n" to "\r\n" for PTY sessions so multi-line

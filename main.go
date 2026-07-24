@@ -247,8 +247,9 @@ func cmdRun(args []string) {
 		if !portFree(svc.Addr) {
 			fmt.Printf("  SSH   port %s in use — skipped (override with --ssh)\n", svc.Addr)
 		} else {
+			hkPath := hostKeyPath(im)
 			go func() {
-				if err := services.StartSSH(st, svc.Addr, svc.User, svc.Pass, shellProto); err != nil {
+				if err := services.StartSSH(st, svc.Addr, svc.User, svc.Pass, hkPath, shellProto); err != nil {
 					fmt.Println("[ssh] stopped:", err)
 				}
 			}()
@@ -314,6 +315,18 @@ func flagFor(key string) string {
 		return "dash"
 	}
 	return key
+}
+
+// hostKeyPath returns where to persist the SSH host key: inside the image dir
+// for on-disk images, or the user config dir for the embedded demo.
+func hostKeyPath(im *image.Image) string {
+	if im.Dir != "" {
+		return filepath.Join(im.Dir, ".webhead", "ssh_host_key")
+	}
+	if cfg, err := os.UserConfigDir(); err == nil {
+		return filepath.Join(cfg, "webhead", "ssh_host_key")
+	}
+	return ""
 }
 
 func portOf(addr string) string {
