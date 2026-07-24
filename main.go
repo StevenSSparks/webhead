@@ -39,6 +39,10 @@ func main() {
 		cmdCert(args[1:])
 	case "flash-board":
 		cmdFlashBoard(args[1:])
+	case "build-image":
+		cmdBuildImage(args[1:])
+	case "doctor":
+		cmdDoctor(args[1:])
 	case "version", "ver", "--version", "-v":
 		fmt.Println("webhead " + services.Version)
 	case "-h", "--help", "help":
@@ -58,7 +62,9 @@ usage:
   webhead init [dir]            scaffold a new image (webhead.json + data/)
   webhead cert status <image>   show the image's installed TLS cert + expiry
   webhead cert refresh <image>  renew (acme.sh) and install the cert into the image
-  webhead flash-board <image>   build a LittleFS image and flash it to an ESP32 (--confirm to write)
+  webhead build-image <image>   compile firmware + build FS -> one flashable .bin
+  webhead flash-board <image>   flash the site (or --image <bin> for a full image); --confirm to write
+  webhead doctor [--install]    check / install the hardware toolchain
 
 run flags (override the image manifest):
   --http :8080     --https :8443    --dns :5354     --ssh :2222    --dash :9090

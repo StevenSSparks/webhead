@@ -72,7 +72,9 @@ NO_HOSTS=1 ./setup.sh                # don't touch /etc/hosts; run the demo imag
 | `webhead init [dir]` | Scaffold a new image (`webhead.json` + `data/index.html`). |
 | `webhead cert status <image>` | Show the image's installed TLS cert and days-to-expiry. |
 | `webhead cert refresh <image>` | Renew via acme.sh (DNS-01) and install the cert into the image. |
-| `webhead flash-board <image>` | Build a LittleFS image and flash it to an ESP32 (plans first; `--confirm` to write). |
+| `webhead doctor [--install]` | Check / install the hardware toolchain (arduino-cli, esptool, mklittlefs, esp32 core). |
+| `webhead build-image <image>` | Compile firmware + build the filesystem → one flashable `.bin`. |
+| `webhead flash-board <image>` | Flash the filesystem, or a full `--image <bin>`, to an ESP32 (plans first; `--confirm` to write). |
 
 Run-flag overrides (win over the manifest): `--http :8080` `--https :8443`
 `--dns :5354` `--ssh :2222` `--dash :9090` `--ssh-user` `--ssh-pass`

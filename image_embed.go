@@ -19,3 +19,9 @@ func defaultImageFS() fs.FS {
 	}
 	return sub
 }
+
+// referenceFirmware is the generic ESP32 portal sketch, embedded so
+// `webhead build-image` can compile it when an image ships no firmware/ of its own.
+//
+//go:embed all:firmware/webhead-portal
+var referenceFirmware embed.FS

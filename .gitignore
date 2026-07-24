@@ -6,3 +6,7 @@ webhead
 *.pem
 
 .DS_Store
+
+# built flash images (regenerate with `webhead build-image`)
+examples/*/build/
+*.bin

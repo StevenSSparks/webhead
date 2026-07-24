@@ -26,11 +26,19 @@ func cmdFlashBoard(args []string) {
 	page := fs.Int("page", 256, "LittleFS page size")
 	block := fs.Int("block", 4096, "LittleFS block size")
 	confirm := fs.Bool("confirm", false, "actually write to the board (default: plan only)")
+	fullImage := fs.String("image", "", "flash a prebuilt full image (from `build-image`) at 0x0 instead of just the FS")
 	imgArg, rest := splitImageArgs(args)
 	fs.Parse(rest)
 	if imgArg == "" {
 		imgArg = fs.Arg(0)
 	}
+
+	// --image: write a complete prebuilt image (firmware+FS) at 0x0.
+	if *fullImage != "" {
+		flashFullImage(*fullImage, *chip, *port, *confirm)
+		return
+	}
+
 	if imgArg == "" {
 		fatal(fmt.Errorf("flash-board needs an image path (the dir holding data/)"))
 	}
@@ -122,6 +130,36 @@ func cmdFlashBoard(args []string) {
 		fatal(fmt.Errorf("esptool failed: %w", err))
 	}
 	fmt.Println("==> done. Reboot the board; it now serves this image's data/ over LittleFS.")
+}
+
+// flashFullImage writes a complete prebuilt image (bootloader+partitions+app+FS)
+// at offset 0x0.
+func flashFullImage(path, chip, port string, confirm bool) {
+	if _, err := os.Stat(path); err != nil {
+		fatal(fmt.Errorf("image not found: %s (build it with `webhead build-image`)", path))
+	}
+	esptool, err := findEsptool()
+	if err != nil {
+		fatal(fmt.Errorf("esptool not found — run: webhead doctor --install"))
+	}
+	if port == "" {
+		port = detectPort()
+	}
+	fmt.Printf("==> full-image flash\n    image : %s\n    chip  : %s\n    port  : %s\n",
+		path, chip, orName(port, "(none detected — plug in the board or pass --port)"))
+	fmt.Printf("\n    plan:\n      %s --chip %s --port %s write_flash 0x0 %s\n", esptool, chip, orName(port, "<port>"), path)
+	if !confirm {
+		fmt.Println("\n==> plan only. Re-run with --confirm to write to the board.")
+		return
+	}
+	if port == "" {
+		fatal(fmt.Errorf("no serial port; plug in the board or pass --port"))
+	}
+	fmt.Println("\n==> writing (erases + writes; ~30-60s)")
+	if err := run(esptool, "--chip", chip, "--port", port, "write_flash", "0x0", path); err != nil {
+		fatal(fmt.Errorf("esptool failed: %w", err))
+	}
+	fmt.Println("==> done. Reset the board.")
 }
 
 // findEsptool looks for esptool.py or esptool on PATH.

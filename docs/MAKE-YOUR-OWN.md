@@ -29,6 +29,9 @@ git clone https://github.com/StevenSSparks/webhead
 cd webhead && go build -o webhead .
 ```
 
+> `go install` puts `webhead` in `$(go env GOPATH)/bin`. If `webhead` isn't found,
+> add that to your PATH: `export PATH="$PATH:$(go env GOPATH)/bin"`.
+
 Check it runs — this boots the built-in **FriendlyPortal** demo:
 
 ```bash
@@ -171,60 +174,50 @@ This makes `https://yourdomain` show a genuine padlock.
 
 This puts your portal on a real pocket-sized board — a
 [Seeed XIAO ESP32-S3](https://www.seeedstudio.com/XIAO-ESP32S3-p-5627.html) here.
+**webhead does the whole thing** — no hand-entered flash offsets, no separate
+firmware step.
 
-### 6a. One-time tool setup (macOS shown; Linux is the same idea)
-
-```bash
-brew install arduino-cli esptool mklittlefs
-arduino-cli config init
-arduino-cli config add board_manager.additional_urls \
-  https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
-arduino-cli core update-index
-arduino-cli core install esp32:esp32
-```
-
-### 6b. Flash the firmware (the AP + DNS + web server)
-
-The board needs firmware that runs the access point, DNS, and web server. (The
-webhead binary is the *emulator*; on the board you run a small Arduino sketch —
-see the project's `firmware/` for a starting point.) Compile and upload:
+### 6a. Install the toolchain (one command)
 
 ```bash
-# plug the board in; find its port:
-arduino-cli board list
-
-arduino-cli compile --fqbn esp32:esp32:XIAO_ESP32S3 ./firmware
-arduino-cli upload  --fqbn esp32:esp32:XIAO_ESP32S3 -p /dev/cu.usbmodemXXXX ./firmware
+webhead doctor            # shows what's missing
+webhead doctor --install  # installs arduino-cli, esptool, mklittlefs, esp32 core (Homebrew)
 ```
 
-### 6c. Flash your website (the `data/` folder → LittleFS)
+### 6b. Build one flashable image
 
-`webhead flash-board` builds a LittleFS image from `data/` and writes it. It
-**plans first** (nothing is written) and figures out the flash offset for you:
+`build-image` compiles the firmware (a built-in reference sketch — it bakes your
+image's SSID/domain in automatically), builds the LittleFS filesystem from
+`data/`, and merges them into a single `.bin`:
 
 ```bash
-webhead flash-board my-portal                    # prints the plan + fit check
-webhead flash-board my-portal --confirm          # actually writes it
+webhead build-image my-portal
+# → my-portal/build/<name>-8MB.bin
 ```
 
-- It auto-detects the serial port, and reports whether your site **fits** the
-  filesystem partition.
-- The default (`default_8MB`) gives ~1.5 MB of space. If your site is bigger,
-  use a larger partition — webhead looks up the offset for you:
+- It reports whether your site **fits** the filesystem and refuses to build if it
+  doesn't (telling you the fix).
+- Site bigger than ~1.5 MB? Use a larger partition — webhead looks up the offset
+  for you and compiles the firmware to match:
 
   ```bash
-  webhead flash-board my-portal --partition large_spiffs_8MB --confirm   # ~5.5 MB FS
+  webhead build-image my-portal --partition large_spiffs_8MB   # ~5.5 MB filesystem
   ```
 
-  If you use `large_spiffs_8MB`, compile the firmware with the matching table so
-  the board reads the file system at the right place:
+- Have your own firmware? Point at it: `--sketch ./my-firmware`.
 
-  ```bash
-  arduino-cli compile --fqbn esp32:esp32:XIAO_ESP32S3 \
-    --build-property build.partitions=large_spiffs_8MB ./firmware
-  ```
+### 6c. Flash it
 
-Reboot the board and join its Wi-Fi — your portal is live, no laptop needed.
+```bash
+webhead flash-board my-portal --image my-portal/build/<name>-8MB.bin            # plan (nothing written)
+webhead flash-board my-portal --image my-portal/build/<name>-8MB.bin --confirm  # write it
+```
+
+webhead auto-detects the serial port. Reboot the board, join its Wi-Fi — your
+portal is live, no laptop needed.
+
+> **Just updating the website?** After the firmware's on the board once, you can
+> reflash only the filesystem: `webhead flash-board my-portal --partition <same> --confirm`.
 
 ---
 
