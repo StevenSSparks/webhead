@@ -136,12 +136,21 @@ func cmdRun(args []string) {
 	extended := fs.Bool("extended", false, "enable extended shell commands")
 	setupHosts := fs.Bool("setup-hosts", false, "map image domain in /etc/hosts")
 	lan := fs.Bool("lan", false, "future LAN mode (stub)")
-	fs.Parse(args)
+
+	// The image path is an optional positional arg. Go's flag package stops at
+	// the first non-flag token, so `run <image> --setup-hosts` would drop the
+	// flag. Pull a leading positional out first, then parse the rest — this lets
+	// flags appear before or after the image path.
+	image, rest := splitImageArgs(args)
+	fs.Parse(rest)
+	if image == "" {
+		image = fs.Arg(0)
+	}
 
 	set := map[string]bool{}
 	fs.Visit(func(f *flag.Flag) { set[f.Name] = true })
 
-	im, err := loadImage(fs.Arg(0))
+	im, err := loadImage(image)
 	if err != nil {
 		fatal(err)
 	}
@@ -327,6 +336,17 @@ func hostKeyPath(im *image.Image) string {
 		return filepath.Join(cfg, "webhead", "ssh_host_key")
 	}
 	return ""
+}
+
+// splitImageArgs pulls a leading positional image path out of args so run flags
+// can appear after the image path (Go's flag package otherwise stops parsing at
+// the first non-flag token). A leading token that starts with "-" is treated as
+// a flag, not the image.
+func splitImageArgs(args []string) (image string, rest []string) {
+	if len(args) > 0 && !strings.HasPrefix(args[0], "-") {
+		return args[0], args[1:]
+	}
+	return "", args
 }
 
 func portOf(addr string) string {

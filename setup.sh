@@ -33,6 +33,10 @@ fi
 echo "==> clearing any stale SSH host key for localhost:$SSH_PORT"
 ssh-keygen -R "[localhost]:$SSH_PORT" >/dev/null 2>&1 || true
 
+echo "==> stopping any previous webhead instance"
+${SUDO} pkill -f 'webhead run' 2>/dev/null || true
+sleep 0.4
+
 # Assemble the run command.
 ARGS=(run)
 [ -n "$IMAGE" ] && ARGS+=("$IMAGE")
