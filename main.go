@@ -37,6 +37,8 @@ func main() {
 		cmdInit(args[1:])
 	case "cert":
 		cmdCert(args[1:])
+	case "flash-board":
+		cmdFlashBoard(args[1:])
 	case "-h", "--help", "help":
 		usage()
 	default:
@@ -54,6 +56,7 @@ usage:
   webhead init [dir]            scaffold a new image (webhead.json + data/)
   webhead cert status <image>   show the image's installed TLS cert + expiry
   webhead cert refresh <image>  renew (acme.sh) and install the cert into the image
+  webhead flash-board <image>   build a LittleFS image and flash it to an ESP32 (--confirm to write)
 
 run flags (override the image manifest):
   --http :8080     --https :8443    --dns :5354     --ssh :2222    --dash :9090
@@ -261,6 +264,7 @@ func cmdRun(args []string) {
 			fmt.Printf("  SSH   port %s in use — skipped (override with --ssh)\n", svc.Addr)
 		} else {
 			hkPath := hostKeyPath(im)
+			shellProto.User = svc.User
 			go func() {
 				if err := services.StartSSH(st, svc.Addr, svc.User, svc.Pass, hkPath, shellProto); err != nil {
 					fmt.Println("[ssh] stopped:", err)

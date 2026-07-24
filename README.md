@@ -94,18 +94,29 @@ my-image/
 
 ## The shell
 
-`ssh <user>@localhost -p 2222` drops you at the image's prompt. Faithful command
-set (matches the ESP32 firmware — the honest emulation of a microcontroller):
+`ssh <user>@localhost -p 2222` drops you at the image's prompt. Type `help` for
+the list and `man <cmd>` for any command's manual.
+
+**Faithful set** (matches the ESP32 firmware — the honest emulation of a
+microcontroller) plus session niceties:
 
 ```
-help  status  clients  stats  log [n]  tail  ls [path]  cat <path>
-rm <path>  free  uptime  wifi  reboot
+help  man  status  clients  stats  log [n]  tail  top  ls [path]  cat <path>
+rm <path>  free  uptime  wifi  dns  who  clear  cls  reboot  exit
 ```
 
-`tail` live-streams web hits as you browse — press Enter to stop. With
-`extendedShell` / `--extended` you also get `pwd whoami echo uname clear`, clearly
-banner-marked as **emulator-only, beyond the ESP32** (a real ESP32-S3 has no MMU
-and can't run a unix kernel — that layer is for Pi-class targets).
+- `tail` live-streams web hits as you browse (Enter to stop).
+- `top` is a live text dashboard — uptime, memory bars, top games, recent hits
+  and DNS (any key to quit).
+- `exit`/`logout`/`quit` (or Ctrl-D) disconnect; `?` is an alias for `help`.
+
+**Extended set** (`extendedShell: true` in the manifest, or `--extended`) adds a
+unix feel, banner-marked **emulator-only, beyond the ESP32** (a real ESP32-S3 has
+no MMU and can't run a unix kernel — that layer is for Pi-class targets):
+
+```
+pwd  whoami  id  echo  date  uname  hostname  version  history  about
+```
 
 ## HTTPS & real certs
 

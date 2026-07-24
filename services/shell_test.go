@@ -72,6 +72,61 @@ func TestShellUnknown(t *testing.T) {
 	}
 }
 
+func TestShellHelpListsSessionAndTopCommands(t *testing.T) {
+	sh := &Shell{St: shellState()}
+	out := sh.Run("help")
+	for _, c := range []string{"man", "top", "exit", "clear", "who", "dns"} {
+		if !strings.Contains(out, c) {
+			t.Fatalf("help missing %q:\n%s", c, out)
+		}
+	}
+}
+
+func TestShellManPages(t *testing.T) {
+	sh := &Shell{St: shellState()}
+	if !strings.Contains(sh.Run("man status"), "uptime") {
+		t.Fatalf("man status wrong: %q", sh.Run("man status"))
+	}
+	// ? is an alias for help
+	if sh.Run("?") != sh.Run("help") {
+		t.Fatal("? should alias help")
+	}
+	// man for an extended cmd in faithful mode explains it needs extended mode
+	if !strings.Contains(sh.Run("man whoami"), "extended") {
+		t.Fatalf("man whoami (faithful) should mention extended: %q", sh.Run("man whoami"))
+	}
+}
+
+func TestShellClearAndAliasAlwaysAvailable(t *testing.T) {
+	sh := &Shell{St: shellState()} // faithful mode
+	if sh.Run("clear") == "" || !strings.Contains(sh.Run("clear"), "\033[2J") {
+		t.Fatal("clear should emit an ANSI clear even in faithful mode")
+	}
+	if sh.Run("cls") != sh.Run("clear") {
+		t.Fatal("cls should equal clear")
+	}
+}
+
+func TestShellExtendedExtras(t *testing.T) {
+	ext := &Shell{St: shellState(), Extended: true, User: "spider", Hostname: "spider-verse"}
+	if ext.Run("version") != "webhead "+Version {
+		t.Fatalf("version: %q", ext.Run("version"))
+	}
+	if ext.Run("hostname") != "spider-verse" {
+		t.Fatalf("hostname: %q", ext.Run("hostname"))
+	}
+	if !strings.Contains(ext.Run("id"), "spider") {
+		t.Fatalf("id: %q", ext.Run("id"))
+	}
+	if ext.Run("echo hello there") != "hello there" {
+		t.Fatalf("echo: %q", ext.Run("echo hello there"))
+	}
+	// date should be non-empty
+	if ext.Run("date") == "" {
+		t.Fatal("date empty")
+	}
+}
+
 func TestShellExtendedOnlyWhenEnabled(t *testing.T) {
 	base := &Shell{St: shellState()}
 	if !strings.Contains(base.Run("whoami"), "unknown") {
