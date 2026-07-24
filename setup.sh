@@ -30,8 +30,30 @@ if [ -n "$IMAGE" ] && [ -f "$IMAGE/webhead.json" ]; then
   [ -n "${p:-}" ] && SSH_PORT="$p"
 fi
 
-echo "==> clearing any stale SSH host key for localhost:$SSH_PORT"
+# Ensure a STABLE, user-owned SSH host key so the server key never changes
+# between runs. Mixing sudo/non-sudo runs can leave <image>/.webhead owned by
+# root (or empty), which makes webhead fall back to a fresh key each launch —
+# the classic "host key mismatch / possible MITM" client error.
+if [ -n "$IMAGE" ]; then
+  KEYDIR="$IMAGE/.webhead"
+  KEYFILE="$KEYDIR/ssh_host_key"
+  if [ -e "$KEYDIR" ] && [ ! -O "$KEYDIR" ]; then
+    echo "==> repairing ownership of $KEYDIR (was root-owned from a prior sudo run)"
+    ${SUDO} chown -R "$(id -un)" "$KEYDIR" 2>/dev/null || true
+  fi
+  mkdir -p "$KEYDIR"
+  if [ ! -f "$KEYFILE" ]; then
+    echo "==> generating a stable SSH host key"
+    ssh-keygen -t ed25519 -f "$KEYFILE" -N "" -q -C webhead
+  fi
+  echo "==> SSH host key fingerprint (stable across runs):"
+  ssh-keygen -lf "$KEYFILE" 2>/dev/null | sed 's/^/    /'
+fi
+
+echo "==> clearing any stale SSH host key for localhost:$SSH_PORT (OpenSSH known_hosts)"
 ssh-keygen -R "[localhost]:$SSH_PORT" >/dev/null 2>&1 || true
+echo "    NOTE: if you connect with a GUI/custom client, also delete its"
+echo "    localhost:$SSH_PORT entry once (e.g. Vault -> Known Hosts)."
 
 echo "==> stopping any previous webhead instance"
 ${SUDO} pkill -f 'webhead run' 2>/dev/null || true

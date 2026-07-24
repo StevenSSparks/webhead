@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/pem"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -92,6 +93,13 @@ func StartSSH(st *device.State, addr, user, pass, hostKeyPath string, shellProto
 	// every launch (which reads as a MITM / host-key-mismatch error).
 	if signer, err := loadOrCreateHostKey(hostKeyPath); err == nil {
 		server.AddHostKey(signer)
+	} else if hostKeyPath != "" {
+		fmt.Fprintf(os.Stderr,
+			"[ssh] WARNING: could not use a stable host key at %s (%v)\n"+
+				"[ssh]          falling back to a new key each launch — clients will see a host-key mismatch.\n"+
+				"[ssh]          fix: make that path writable (often a root-owned dir from a prior sudo run):\n"+
+				"[ssh]          sudo chown -R \"$(id -un)\" %s\n",
+			hostKeyPath, err, filepath.Dir(hostKeyPath))
 	}
 	return server.ListenAndServe()
 }
