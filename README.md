@@ -53,6 +53,8 @@ NO_HOSTS=1 ./setup.sh                # don't touch /etc/hosts; run the demo imag
 | `webhead run [image]` | Flash the image (or the embedded demo) and boot every enabled service. |
 | `webhead flash [image]` | Load + validate an image and print the config it *would* boot (dry run). |
 | `webhead init [dir]` | Scaffold a new image (`webhead.json` + `data/index.html`). |
+| `webhead cert status <image>` | Show the image's installed TLS cert and days-to-expiry. |
+| `webhead cert refresh <image>` | Renew via acme.sh (DNS-01) and install the cert into the image. |
 
 Run-flag overrides (win over the manifest): `--http :8080` `--https :8443`
 `--dns :5354` `--ssh :2222` `--dash :9090` `--ssh-user` `--ssh-pass`
@@ -113,6 +115,18 @@ Webhead serves HTTPS with the image's real cert if `<image>/<certDir>/fullchain.
 padlock locally, run once with `--setup-hosts` (needs sudo) to map the domain to
 `dnsAnswer` in `/etc/hosts`.
 
+Manage the real cert with acme.sh from the CLI:
+
+```bash
+webhead cert status  ~/dev/spiderverse-os   # CN, issuer, days to expiry
+webhead cert refresh ~/dev/spiderverse-os   # renew (if due) + install into the image
+```
+
+`cert refresh` renews the image domain's Let's Encrypt cert via DNS-01 and copies
+`fullchain.pem` + `privkey.pem` into the image's cert dir (and registers an
+acme.sh reinstall hook so future auto-renewals land there too). Add `--force` to
+renew before the renewal window.
+
 ## How the captive portal works
 
 A device joins the Wi-Fi and probes a URL like `/generate_204` to check for
@@ -125,8 +139,6 @@ Watch every hit and DNS lookup stream in the console at `:9090`.
 The image is a portable bundle, so it's also the artifact you flash to real
 hardware. Planned bridges (not yet implemented):
 
-- **`webhead cert refresh`** — renew the Let's Encrypt cert (acme.sh DNS-01) into
-  the image's `certs/`, then `webhead run` verifies it serves clean locally.
 - **`webhead flash-board`** — push the same image's `data/` to an ESP32 over
   `arduino-cli`/`esptool` (LittleFS), so what you tested is what ships.
 - `--lan` — bind real LAN ports so another device can join over Wi-Fi.
