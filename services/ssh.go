@@ -1,8 +1,6 @@
 package services
 
 import (
-	"bufio"
-	"fmt"
 	"io"
 	"strings"
 	"time"
@@ -13,7 +11,9 @@ import (
 
 // StartSSH runs the gliderlabs SSH server (blocking; run it in a goroutine).
 // shellProto carries the image identity (prompt/ssid/title/hostname/extended);
-// each session gets a copy bound to st.
+// each session gets a copy bound to st. The session is driven as a raw
+// interactive terminal so it works with a real `ssh` client (PTY, CR line
+// endings, local echo).
 func StartSSH(st *device.State, addr, user, pass string, shellProto Shell) error {
 	handler := func(s gssh.Session) {
 		st.SSHConnect()
@@ -21,26 +21,56 @@ func StartSSH(st *device.State, addr, user, pass string, shellProto Shell) error
 
 		sh := shellProto
 		sh.St = st
+		_, _, pty := s.Pty()
 
-		io.WriteString(s, "\n"+sh.Banner()+"\n")
-		io.WriteString(s, "\n"+sh.promptLine())
+		writeOut(s, "\r\n"+sh.Banner()+"\r\n\r\n", pty)
+		writeOut(s, sh.promptLine(), pty)
 
-		reader := bufio.NewReader(s)
+		var line []byte
+		buf := make([]byte, 1)
 		for {
-			lineText, err := reader.ReadString('\n')
+			n, err := s.Read(buf)
 			if err != nil {
 				return // client closed
 			}
-			cmd := strings.TrimRight(lineText, "\r\n")
-			if strings.TrimSpace(cmd) == "tail" {
-				runTail(s, reader, st)
-			} else {
-				out := sh.Run(cmd)
-				if out != "" {
-					io.WriteString(s, out+"\n")
+			if n == 0 {
+				continue
+			}
+			switch c := buf[0]; c {
+			case '\r', '\n':
+				writeOut(s, "\r\n", pty)
+				cmd := string(line)
+				line = line[:0]
+				if strings.TrimSpace(cmd) == "tail" {
+					runTail(s, st, pty)
+				} else if out := sh.Run(cmd); out != "" {
+					writeOut(s, out+"\n", pty)
+				}
+				writeOut(s, sh.promptLine(), pty)
+			case 0x7f, 0x08: // backspace / delete
+				if len(line) > 0 {
+					line = line[:len(line)-1]
+					if pty {
+						io.WriteString(s, "\b \b")
+					}
+				}
+			case 0x03: // Ctrl-C — abandon the current line
+				line = line[:0]
+				writeOut(s, "^C\r\n", pty)
+				writeOut(s, sh.promptLine(), pty)
+			case 0x04: // Ctrl-D — exit on empty line
+				if len(line) == 0 {
+					writeOut(s, "\r\n", pty)
+					return
+				}
+			default:
+				if c >= 0x20 && c < 0x7f {
+					line = append(line, c)
+					if pty {
+						s.Write([]byte{c}) // local echo
+					}
 				}
 			}
-			io.WriteString(s, "\n"+sh.promptLine())
 		}
 	}
 
@@ -54,13 +84,23 @@ func StartSSH(st *device.State, addr, user, pass string, shellProto Shell) error
 	return server.ListenAndServe()
 }
 
-// runTail streams new log lines until the client sends a line (Enter).
-func runTail(w io.Writer, reader *bufio.Reader, st *device.State) {
-	io.WriteString(w, "[tailing — press Enter to stop]\n")
+// writeOut writes s, converting "\n" to "\r\n" for PTY sessions so multi-line
+// output doesn't stair-step.
+func writeOut(w io.Writer, s string, pty bool) {
+	if pty {
+		s = strings.ReplaceAll(s, "\n", "\r\n")
+	}
+	io.WriteString(w, s)
+}
+
+// runTail streams new log lines until the client presses a key (Enter).
+func runTail(s gssh.Session, st *device.State, pty bool) {
+	writeOut(s, "[tailing — press Enter to stop]\n", pty)
 	last := st.Log.HeadSeq()
 	stop := make(chan struct{})
 	go func() {
-		reader.ReadString('\n')
+		b := make([]byte, 1)
+		s.Read(b)
 		close(stop)
 	}()
 	ticker := time.NewTicker(300 * time.Millisecond)
@@ -68,11 +108,11 @@ func runTail(w io.Writer, reader *bufio.Reader, st *device.State) {
 	for {
 		select {
 		case <-stop:
-			io.WriteString(w, "[stopped]\n")
+			writeOut(s, "[stopped]\n", pty)
 			return
 		case <-ticker.C:
 			for _, e := range st.Log.Since(last) {
-				fmt.Fprintln(w, e.Text)
+				writeOut(s, e.Text+"\n", pty)
 				last = e.Seq
 			}
 		}

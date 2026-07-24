@@ -69,6 +69,55 @@ func TestSSHLoginAndStatus(t *testing.T) {
 	}
 }
 
+// TestSSHInteractivePTY reproduces a real `ssh` client: it requests a PTY and
+// ends the command with a carriage return (\r), not \n. This is the case that
+// used to hang.
+func TestSSHInteractivePTY(t *testing.T) {
+	ln, _ := net.Listen("tcp", "127.0.0.1:0")
+	addr := ln.Addr().String()
+	ln.Close()
+
+	st := device.New(fstest.MapFS{"index.html": {Data: []byte("x")}})
+	go StartSSH(st, addr, "spider", "secret", Shell{
+		Prompt: "spider-verse# ", SSID: "Spider-Verse", Title: "Spider-Verse OS",
+	})
+	waitPort(t, addr)
+
+	cfg := &xssh.ClientConfig{
+		User:            "spider",
+		Auth:            []xssh.AuthMethod{xssh.Password("secret")},
+		HostKeyCallback: xssh.InsecureIgnoreHostKey(),
+		Timeout:         3 * time.Second,
+	}
+	client, err := xssh.Dial("tcp", addr, cfg)
+	if err != nil {
+		t.Fatalf("dial: %v", err)
+	}
+	defer client.Close()
+	sess, _ := client.NewSession()
+	defer sess.Close()
+
+	modes := xssh.TerminalModes{xssh.ECHO: 0}
+	if err := sess.RequestPty("xterm", 40, 80, modes); err != nil {
+		t.Fatalf("pty: %v", err)
+	}
+	stdin, _ := sess.StdinPipe()
+	var buf bytes.Buffer
+	sess.Stdout = &buf
+	sess.Stderr = &buf
+	if err := sess.Shell(); err != nil {
+		t.Fatal(err)
+	}
+	io.WriteString(stdin, "status\r") // carriage return, like a real terminal
+	time.Sleep(400 * time.Millisecond)
+	stdin.Close()
+
+	out := buf.String()
+	if !bytes.Contains([]byte(out), []byte("SSID     : Spider-Verse")) {
+		t.Fatalf("CR-terminated command did not run (regression: hang):\n%q", out)
+	}
+}
+
 func TestSSHRejectsWrongPassword(t *testing.T) {
 	ln, _ := net.Listen("tcp", "127.0.0.1:0")
 	addr := ln.Addr().String()
