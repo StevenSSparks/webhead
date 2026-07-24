@@ -19,12 +19,13 @@ type State struct {
 	Stats *Stats
 	FS    *VFS
 
-	mu       sync.Mutex
-	boot     time.Time
-	dns      []DNSQuery
-	dnsSeq   uint32
-	sshConns int
-	base     fs.FS
+	mu        sync.Mutex
+	boot      time.Time
+	dns       []DNSQuery
+	dnsSeq    uint32
+	dnsCounts map[string]uint32
+	sshConns  int
+	base      fs.FS
 }
 
 const logCapacity = 120
@@ -32,11 +33,12 @@ const dnsCapacity = 60
 
 func New(base fs.FS) *State {
 	return &State{
-		Log:   NewLogRing(logCapacity),
-		Stats: NewStats(),
-		FS:    NewVFS(base),
-		boot:  time.Now(),
-		base:  base,
+		Log:       NewLogRing(logCapacity),
+		Stats:     NewStats(),
+		FS:        NewVFS(base),
+		boot:      time.Now(),
+		base:      base,
+		dnsCounts: map[string]uint32{},
 	}
 }
 
@@ -68,10 +70,32 @@ func (s *State) NoteDNS(name, answer string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.dnsSeq++
+	if s.dnsCounts == nil {
+		s.dnsCounts = map[string]uint32{}
+	}
+	s.dnsCounts[name]++
 	s.dns = append(s.dns, DNSQuery{Seq: s.dnsSeq, Name: name, Answer: answer})
 	if len(s.dns) > dnsCapacity {
 		s.dns = s.dns[len(s.dns)-dnsCapacity:]
 	}
+}
+
+// DNSTotal returns the total number of DNS queries answered since boot.
+func (s *State) DNSTotal() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return int(s.dnsSeq)
+}
+
+// DNSCounts returns a copy of per-name query counts.
+func (s *State) DNSCounts() map[string]uint32 {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	out := make(map[string]uint32, len(s.dnsCounts))
+	for k, v := range s.dnsCounts {
+		out[k] = v
+	}
+	return out
 }
 
 func (s *State) RecentDNS(n int) []DNSQuery {
@@ -118,6 +142,7 @@ func (s *State) Reboot() {
 	s.Stats = NewStats()
 	s.dns = nil
 	s.dnsSeq = 0
+	s.dnsCounts = map[string]uint32{}
 	s.boot = time.Now()
 	s.mu.Unlock()
 	s.System("     0s  boot — device up")

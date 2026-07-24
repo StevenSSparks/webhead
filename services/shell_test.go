@@ -127,6 +127,50 @@ func TestShellExtendedExtras(t *testing.T) {
 	}
 }
 
+func TestShellCd(t *testing.T) {
+	st := device.New(fstest.MapFS{
+		"index.html":             {Data: []byte("x")},
+		"arcade/games/2048.html": {Data: []byte("g")},
+	})
+	sh := &Shell{St: st, Extended: true}
+	if sh.Run("pwd") != "/" {
+		t.Fatalf("pwd default: %q", sh.Run("pwd"))
+	}
+	if out := sh.Run("cd arcade"); out != "" {
+		t.Fatalf("cd arcade: %q", out)
+	}
+	if sh.Run("pwd") != "/arcade" {
+		t.Fatalf("pwd after cd: %q", sh.Run("pwd"))
+	}
+	if !strings.Contains(sh.Run("ls"), "games") {
+		t.Fatalf("ls in /arcade: %q", sh.Run("ls"))
+	}
+	if !strings.Contains(sh.Run("cd nope"), "not a directory") {
+		t.Fatal("cd into bad dir should error")
+	}
+	sh.Run("cd /")
+	if sh.Run("pwd") != "/" {
+		t.Fatal("cd / should return to root")
+	}
+}
+
+func TestShellComplete(t *testing.T) {
+	st := device.New(fstest.MapFS{
+		"index.html":             {Data: []byte("x")},
+		"arcade/games/2048.html": {Data: []byte("g")},
+	})
+	sh := &Shell{St: st, Extended: true}
+	if nl, _ := sh.Complete("vers"); nl != "version " {
+		t.Fatalf("command complete: %q", nl)
+	}
+	if nl, _ := sh.Complete("cat inde"); nl != "cat index.html " {
+		t.Fatalf("file complete: %q", nl)
+	}
+	if nl, _ := sh.Complete("ls arca"); nl != "ls arcade/" {
+		t.Fatalf("dir complete: %q", nl)
+	}
+}
+
 func TestShellExtendedOnlyWhenEnabled(t *testing.T) {
 	base := &Shell{St: shellState()}
 	if !strings.Contains(base.Run("whoami"), "unknown") {

@@ -39,6 +39,8 @@ func main() {
 		cmdCert(args[1:])
 	case "flash-board":
 		cmdFlashBoard(args[1:])
+	case "version", "ver", "--version", "-v":
+		fmt.Println("webhead " + services.Version)
 	case "-h", "--help", "help":
 		usage()
 	default:
@@ -79,7 +81,7 @@ func fatal(err error) {
 
 func loadImage(path string) (*image.Image, error) {
 	if path == "" {
-		return image.LoadFS(assets.ImageFS())
+		return image.LoadFS(defaultImageFS())
 	}
 	return image.Load(path)
 }
@@ -207,11 +209,13 @@ func cmdRun(args []string) {
 	st.System("     0s  boot — device up")
 
 	shellProto := services.Shell{
-		Extended: m.ExtendedShell,
-		Prompt:   m.Prompt,
-		SSID:     m.SSID,
-		Title:    m.Name,
-		Hostname: m.Hostname,
+		Extended:  m.ExtendedShell,
+		Prompt:    m.Prompt,
+		SSID:      m.SSID,
+		Title:     m.Name,
+		Hostname:  m.Hostname,
+		Motd:      m.Motd,
+		DNSAnswer: m.DNSAnswer,
 	}
 
 	fmt.Printf("\n🕸️  flashing image: %s\n", m.Name)

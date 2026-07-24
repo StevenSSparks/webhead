@@ -126,8 +126,8 @@ func TestSSHLoginAndStatus(t *testing.T) {
 	out := waitFor(buf, "SSID     : Spider-Verse", 3*time.Second)
 	stdin.Close()
 
-	if !strings.Contains(out, "Spider-Verse OS shell") {
-		t.Fatalf("no banner in:\n%s", out)
+	if !strings.Contains(out, "Spider-Verse OS") || !strings.Contains(out, "Welcome, spider") {
+		t.Fatalf("no login banner in:\n%s", out)
 	}
 	if !strings.Contains(out, "spider-verse# ") {
 		t.Fatalf("no prompt in:\n%s", out)

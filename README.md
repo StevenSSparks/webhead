@@ -8,17 +8,19 @@ broadcasts a captive-portal welcome, funnels every DNS name to itself, serves th
 image's site over HTTP + HTTPS, streams a live console, and lets you `ssh` into a
 little unix-like shell — all on localhost, no hardware, no sudo.
 
-It began as a way to test **[Spider-Verse OS](https://github.com/stevenssparks/spiderverse-os)**
-(a Seeed XIAO ESP32-S3 appliance) on a laptop, and generalized into a reusable
-tool: anything with a captive portal, a wildcard-DNS trick, and an admin shell.
+It began as a way to test a personal Seeed XIAO ESP32-S3 captive-portal
+appliance on a laptop, and generalized into a reusable tool: anything with a
+captive portal, a wildcard-DNS trick, and an admin shell. The bundled
+**FriendlyPortal OS** example (`examples/friendlyportal-os/`) is a full demo and
+self-documenting tour.
 
 ```
-$ webhead run ~/dev/spiderverse-os
-🕸️  flashing image: Spider-Verse OS
+$ webhead run examples/friendlyportal-os
+🕸️  flashing image: FriendlyPortal OS
   HTTP  (portal)  → http://localhost:8080
-  HTTPS (secure)  → https://localhost:8443   (or https://wififun.net after --setup-hosts)
+  HTTPS (secure)  → https://localhost:8443   (or https://friendlyportal.local after --setup-hosts)
   DNS   (funnel)  → udp:5354  (every name → 127.0.0.1)
-  SSH   (shell)   → ssh spider@localhost -p 2222   (pass: spider-verse)
+  SSH   (shell)   → ssh friendly@localhost -p 2222   (pass: friendly)
   DASH  (console) → http://localhost:9090
 ```
 
@@ -41,8 +43,8 @@ Or from a clone: `go build -o webhead . && ./webhead`.
 with `--setup-hosts` (so the domain resolves locally):
 
 ```bash
-./setup.sh ~/dev/spiderverse-os     # build + host-map + run on 80/443/53 (uses sudo)
-SUDO="" ./setup.sh ~/dev/spiderverse-os   # no sudo (image must use unprivileged ports)
+./setup.sh examples/friendlyportal-os   # build + host-map + run (uses sudo)
+SUDO="" ./setup.sh examples/friendlyportal-os  # no sudo (image uses unprivileged ports)
 NO_HOSTS=1 ./setup.sh                # don't touch /etc/hosts; run the demo image
 ```
 
@@ -55,6 +57,7 @@ NO_HOSTS=1 ./setup.sh                # don't touch /etc/hosts; run the demo imag
 | `webhead init [dir]` | Scaffold a new image (`webhead.json` + `data/index.html`). |
 | `webhead cert status <image>` | Show the image's installed TLS cert and days-to-expiry. |
 | `webhead cert refresh <image>` | Renew via acme.sh (DNS-01) and install the cert into the image. |
+| `webhead flash-board <image>` | Build a LittleFS image and flash it to an ESP32 (plans first; `--confirm` to write). |
 
 Run-flag overrides (win over the manifest): `--http :8080` `--https :8443`
 `--dns :5354` `--ssh :2222` `--dash :9090` `--ssh-user` `--ssh-pass`
@@ -75,18 +78,18 @@ my-image/
 
 ```json
 {
-  "name": "Spider-Verse OS",
-  "hostname": "spider-verse",
-  "prompt": "spider-verse# ",
-  "ssid": "Spider-Verse",
-  "domain": "wififun.net",
+  "name": "FriendlyPortal OS",
+  "hostname": "friendlyportal",
+  "prompt": "friendlyportal# ",
+  "ssid": "FriendlyPortal",
+  "domain": "friendlyportal.local",
   "dnsAnswer": "127.0.0.1",
   "extendedShell": false,
   "services": {
     "http":      { "enabled": true, "addr": ":8080" },
     "https":     { "enabled": true, "addr": ":8443", "certDir": "certs" },
     "dns":       { "enabled": true, "addr": ":5354" },
-    "ssh":       { "enabled": true, "addr": ":2222", "user": "spider", "pass": "spider-verse" },
+    "ssh":       { "enabled": true, "addr": ":2222", "user": "friendly", "pass": "friendly" },
     "dashboard": { "enabled": true, "addr": ":9090" }
   }
 }
@@ -102,20 +105,22 @@ microcontroller) plus session niceties:
 
 ```
 help  man  status  clients  stats  log [n]  tail  top  ls [path]  cat <path>
-rm <path>  free  uptime  wifi  dns  who  clear  cls  reboot  exit
+rm <path>  free  uptime  wifi  dns  dhcp  who  motd  clear  cls  reboot  exit
 ```
 
-- `tail` live-streams web hits as you browse (Enter to stop).
-- `top` is a live text dashboard — uptime, memory bars, top games, recent hits
-  and DNS (any key to quit).
-- `exit`/`logout`/`quit` (or Ctrl-D) disconnect; `?` is an alias for `help`.
+- Login shows a unix-style **MOTD** with live system stats + the image's custom
+  message (set `"motd"` in `webhead.json`).
+- **Tab-completion** for commands and file paths; `?` aliases `help`.
+- `tail` live-streams web hits (Enter to stop); `top` is a live text dashboard
+  (any key to quit); `dns`/`dhcp` show network info + stats.
+- `exit`/`logout`/`quit` (or Ctrl-D) disconnect.
 
 **Extended set** (`extendedShell: true` in the manifest, or `--extended`) adds a
 unix feel, banner-marked **emulator-only, beyond the ESP32** (a real ESP32-S3 has
 no MMU and can't run a unix kernel — that layer is for Pi-class targets):
 
 ```
-pwd  whoami  id  echo  date  uname  hostname  version  history  about
+pwd  cd  whoami  id  echo  date  uname  hostname  version (ver)  history  about
 ```
 
 ## HTTPS & real certs
@@ -129,8 +134,8 @@ padlock locally, run once with `--setup-hosts` (needs sudo) to map the domain to
 Manage the real cert with acme.sh from the CLI:
 
 ```bash
-webhead cert status  ~/dev/spiderverse-os   # CN, issuer, days to expiry
-webhead cert refresh ~/dev/spiderverse-os   # renew (if due) + install into the image
+webhead cert status  my-portal   # CN, issuer, days to expiry
+webhead cert refresh my-portal   # renew (if due) + install into the image
 ```
 
 `cert refresh` renews the image domain's Let's Encrypt cert via DNS-01 and copies
@@ -148,10 +153,10 @@ Watch every hit and DNS lookup stream in the console at `:9090`.
 ## Roadmap — from emulator to board
 
 The image is a portable bundle, so it's also the artifact you flash to real
-hardware. Planned bridges (not yet implemented):
+hardware. `webhead flash-board` already builds a LittleFS image from `data/` and
+writes it to an ESP32 (it prints the plan first; `--confirm` to write). Still on
+the roadmap:
 
-- **`webhead flash-board`** — push the same image's `data/` to an ESP32 over
-  `arduino-cli`/`esptool` (LittleFS), so what you tested is what ships.
 - `--lan` — bind real LAN ports so another device can join over Wi-Fi.
 
 ## Development
@@ -163,8 +168,9 @@ go vet ./...
 
 Packages: `image` (manifest/flash), `device` (shared live state: log ring, stats,
 virtual FS, DNS log), `services` (http, cert, dns, shell, ssh, dashboard),
-`assets` (embedded demo image + console page).
+`assets` (embedded console page); the default demo image is embedded from
+`examples/friendlyportal-os/`.
 
 ## License
 
-MIT © 2026 Steve Sparks
+MIT © 2026 Steve Sparks — Webhead and the FriendlyPortal OS example are MIT licensed.

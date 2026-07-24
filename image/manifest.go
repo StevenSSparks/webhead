@@ -32,6 +32,7 @@ type Manifest struct {
 	Domain        string             `json:"domain"`
 	DNSAnswer     string             `json:"dnsAnswer"`
 	ExtendedShell bool               `json:"extendedShell"`
+	Motd          string             `json:"motd"` // optional login message-of-the-day
 	Services      map[string]Service `json:"services"`
 }
 

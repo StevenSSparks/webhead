@@ -18,6 +18,11 @@ import (
 	xssh "golang.org/x/crypto/ssh"
 )
 
+const (
+	maxHistory = 10  // commands kept per session for `history`
+	maxLineLen = 256 // max input line length (chars)
+)
+
 // StartSSH runs the gliderlabs SSH server (blocking; run it in a goroutine).
 // shellProto carries the image identity (prompt/ssid/title/hostname/extended);
 // each session gets a copy bound to st. The session is driven as a raw
@@ -53,6 +58,9 @@ func StartSSH(st *device.State, addr, user, pass, hostKeyPath string, shellProto
 				trimmed := strings.TrimSpace(cmd)
 				if trimmed != "" {
 					sh.history = append(sh.history, trimmed)
+					if len(sh.history) > maxHistory {
+						sh.history = sh.history[len(sh.history)-maxHistory:]
+					}
 				}
 				switch trimmed {
 				case "tail":
@@ -75,6 +83,23 @@ func StartSSH(st *device.State, addr, user, pass, hostKeyPath string, shellProto
 						io.WriteString(s, "\b \b")
 					}
 				}
+			case '\t': // tab completion (commands and file paths)
+				cur := string(line)
+				newLine, options := sh.Complete(cur)
+				if newLine != cur {
+					extra := newLine[len(cur):]
+					line = []byte(newLine)
+					if pty {
+						io.WriteString(s, extra)
+					}
+				}
+				if len(options) > 0 {
+					writeOut(s, "\r\n"+strings.Join(options, "   ")+"\r\n", pty)
+					writeOut(s, sh.promptLine(), pty)
+					if pty {
+						s.Write(line)
+					}
+				}
 			case 0x03: // Ctrl-C — abandon the current line
 				line = line[:0]
 				writeOut(s, "^C\r\n", pty)
@@ -85,7 +110,7 @@ func StartSSH(st *device.State, addr, user, pass, hostKeyPath string, shellProto
 					return
 				}
 			default:
-				if c >= 0x20 && c < 0x7f {
+				if c >= 0x20 && c < 0x7f && len(line) < maxLineLen {
 					line = append(line, c)
 					if pty {
 						s.Write([]byte{c}) // local echo

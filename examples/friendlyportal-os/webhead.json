@@ -1,0 +1,17 @@
+{
+  "name": "FriendlyPortal OS",
+  "hostname": "friendlyportal",
+  "prompt": "friendlyportal# ",
+  "ssid": "FriendlyPortal",
+  "domain": "friendlyportal.local",
+  "dnsAnswer": "127.0.0.1",
+  "extendedShell": true,
+  "motd": "Welcome to FriendlyPortal — a whole website on a tiny box.\nTry 'top' for the live dashboard, and 'dns'/'dhcp' to see the network. Everything here runs offline.",
+  "services": {
+    "http":      { "enabled": true, "addr": ":8080" },
+    "https":     { "enabled": true, "addr": ":8443", "certDir": "certs" },
+    "dns":       { "enabled": true, "addr": ":5354" },
+    "ssh":       { "enabled": true, "addr": ":2222", "user": "friendly", "pass": "friendly" },
+    "dashboard": { "enabled": true, "addr": ":9090" }
+  }
+}
