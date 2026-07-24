@@ -50,10 +50,20 @@ if [ -n "$IMAGE" ]; then
   ssh-keygen -lf "$KEYFILE" 2>/dev/null | sed 's/^/    /'
 fi
 
-echo "==> clearing any stale SSH host key for localhost:$SSH_PORT (OpenSSH known_hosts)"
-ssh-keygen -R "[localhost]:$SSH_PORT" >/dev/null 2>&1 || true
-echo "    NOTE: if you connect with a GUI/custom client, also delete its"
-echo "    localhost:$SSH_PORT entry once (e.g. Vault -> Known Hosts)."
+echo "==> clearing stale SSH host keys for localhost:$SSH_PORT (all clients)"
+# OpenSSH plus every GUI-client known_hosts store (PounceTERM, etc.). These are
+# standard known_hosts files, so ssh-keygen -R removes the entry from each.
+KH_FILES=("$HOME/.ssh/known_hosts")
+if [ -d "$HOME/Library/Application Support" ]; then
+  while IFS= read -r f; do KH_FILES+=("$f"); done \
+    < <(find "$HOME/Library/Application Support" -maxdepth 2 -name known_hosts 2>/dev/null)
+fi
+for kh in "${KH_FILES[@]}"; do
+  [ -f "$kh" ] || continue
+  if grep -q "\[localhost\]:$SSH_PORT" "$kh" 2>/dev/null; then
+    ssh-keygen -R "[localhost]:$SSH_PORT" -f "$kh" >/dev/null 2>&1 && echo "    cleared: $kh"
+  fi
+done
 
 echo "==> stopping any previous webhead instance"
 ${SUDO} pkill -f 'webhead run' 2>/dev/null || true
