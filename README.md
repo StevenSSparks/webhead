@@ -42,7 +42,8 @@ demo, see [examples/friendlyportal-os/README.md](examples/friendlyportal-os/READ
 ## Install & run
 
 ```bash
-go install github.com/stevenssparks/webhead@latest
+brew install stevenssparks/tap/webhead   # Homebrew (recommended)
+# …or:  go install github.com/stevenssparks/webhead@latest
 
 webhead                       # boot the built-in demo image
 webhead run ./my-image        # boot your own image
