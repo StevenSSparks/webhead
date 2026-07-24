@@ -10,8 +10,8 @@
 #   NO_HOSTS=1     don't pass --setup-hosts (don't touch /etc/hosts)
 #
 # examples:
-#   ./setup.sh ~/dev/spiderverse-os          # Spider-Verse OS on wififun.net
-#   SUDO="" ./setup.sh ~/dev/spiderverse-os  # no sudo (use high ports in the image)
+#   ./setup.sh examples/friendlyportal-os          # FriendlyPortal demo
+#   SUDO="" ./setup.sh examples/friendlyportal-os  # no sudo (unprivileged ports)
 #
 set -euo pipefail
 cd "$(dirname "$0")"

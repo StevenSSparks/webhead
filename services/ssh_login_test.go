@@ -93,13 +93,13 @@ func TestSSHLoginAndStatus(t *testing.T) {
 
 	st := device.New(fstest.MapFS{"index.html": {Data: []byte("x")}})
 	st.NoteHit("HTTP", "9.9.9.9", "/", 200)
-	go StartSSH(st, addr, "spider", "secret", "", Shell{
-		Prompt: "spider-verse# ", SSID: "Spider-Verse", Title: "Spider-Verse OS",
+	go StartSSH(st, addr, "demo", "secret", "", Shell{
+		Prompt: "demo# ", SSID: "Demo", Title: "Demo OS",
 	})
 	waitPort(t, addr)
 
 	cfg := &xssh.ClientConfig{
-		User:            "spider",
+		User:            "demo",
 		Auth:            []xssh.AuthMethod{xssh.Password("secret")},
 		HostKeyCallback: xssh.InsecureIgnoreHostKey(),
 		Timeout:         3 * time.Second,
@@ -123,16 +123,16 @@ func TestSSHLoginAndStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 	io.WriteString(stdin, "status\n")
-	out := waitFor(buf, "SSID     : Spider-Verse", 3*time.Second)
+	out := waitFor(buf, "SSID     : Demo", 3*time.Second)
 	stdin.Close()
 
-	if !strings.Contains(out, "Spider-Verse OS") || !strings.Contains(out, "Welcome, spider") {
+	if !strings.Contains(out, "Demo OS") || !strings.Contains(out, "Welcome,") {
 		t.Fatalf("no login banner in:\n%s", out)
 	}
-	if !strings.Contains(out, "spider-verse# ") {
+	if !strings.Contains(out, "demo# ") {
 		t.Fatalf("no prompt in:\n%s", out)
 	}
-	if !strings.Contains(out, "SSID     : Spider-Verse") {
+	if !strings.Contains(out, "SSID     : Demo") {
 		t.Fatalf("status did not run:\n%s", out)
 	}
 }
@@ -146,13 +146,13 @@ func TestSSHInteractivePTY(t *testing.T) {
 	ln.Close()
 
 	st := device.New(fstest.MapFS{"index.html": {Data: []byte("x")}})
-	go StartSSH(st, addr, "spider", "secret", "", Shell{
-		Prompt: "spider-verse# ", SSID: "Spider-Verse", Title: "Spider-Verse OS",
+	go StartSSH(st, addr, "demo", "secret", "", Shell{
+		Prompt: "demo# ", SSID: "Demo", Title: "Demo OS",
 	})
 	waitPort(t, addr)
 
 	cfg := &xssh.ClientConfig{
-		User:            "spider",
+		User:            "demo",
 		Auth:            []xssh.AuthMethod{xssh.Password("secret")},
 		HostKeyCallback: xssh.InsecureIgnoreHostKey(),
 		Timeout:         3 * time.Second,
@@ -177,10 +177,10 @@ func TestSSHInteractivePTY(t *testing.T) {
 		t.Fatal(err)
 	}
 	io.WriteString(stdin, "status\r") // carriage return, like a real terminal
-	out := waitFor(buf, "SSID     : Spider-Verse", 3*time.Second)
+	out := waitFor(buf, "SSID     : Demo", 3*time.Second)
 	stdin.Close()
 
-	if !strings.Contains(out, "SSID     : Spider-Verse") {
+	if !strings.Contains(out, "SSID     : Demo") {
 		t.Fatalf("CR-terminated command did not run (regression: hang):\n%q", out)
 	}
 }
@@ -190,11 +190,11 @@ func TestSSHRejectsWrongPassword(t *testing.T) {
 	addr := ln.Addr().String()
 	ln.Close()
 	st := device.New(fstest.MapFS{})
-	go StartSSH(st, addr, "spider", "secret", "", Shell{})
+	go StartSSH(st, addr, "demo", "secret", "", Shell{})
 	waitPort(t, addr)
 
 	cfg := &xssh.ClientConfig{
-		User:            "spider",
+		User:            "demo",
 		Auth:            []xssh.AuthMethod{xssh.Password("wrong")},
 		HostKeyCallback: xssh.InsecureIgnoreHostKey(),
 		Timeout:         3 * time.Second,

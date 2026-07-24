@@ -22,10 +22,10 @@ func TestLoadMergesOverDefaults(t *testing.T) {
 		t.Fatal(err)
 	}
 	cfg := `{
-	  "name": "Spider-Verse OS",
-	  "domain": "wififun.net",
-	  "prompt": "spider-verse# ",
-	  "services": { "ssh": { "enabled": true, "user": "spider", "pass": "spider-verse" },
+	  "name": "Demo OS",
+	  "domain": "demo.net",
+	  "prompt": "demo# ",
+	  "services": { "ssh": { "enabled": true, "user": "demo", "pass": "demo" },
 	                "dns": { "enabled": false } }
 	}`
 	os.WriteFile(filepath.Join(dir, "webhead.json"), []byte(cfg), 0644)
@@ -35,14 +35,14 @@ func TestLoadMergesOverDefaults(t *testing.T) {
 		t.Fatal(err)
 	}
 	m := im.Manifest
-	if m.Name != "Spider-Verse OS" || m.Domain != "wififun.net" {
+	if m.Name != "Demo OS" || m.Domain != "demo.net" {
 		t.Fatalf("overrides not applied: %+v", m)
 	}
 	if m.SSID != "Webhead" { // untouched field keeps default
 		t.Fatalf("default SSID lost: %q", m.SSID)
 	}
 	ssh, _ := m.Svc("ssh")
-	if ssh.User != "spider" || ssh.Pass != "spider-verse" || ssh.Addr != ":2222" {
+	if ssh.User != "demo" || ssh.Pass != "demo" || ssh.Addr != ":2222" {
 		t.Fatalf("ssh merge wrong: %+v", ssh) // addr filled from default
 	}
 	dns, _ := m.Svc("dns")

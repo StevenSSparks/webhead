@@ -19,7 +19,7 @@ var Version = "0.1.0"
 
 // Shell is the device mini-shell. Its identity (prompt, ssid, title, hostname,
 // user) comes from the image manifest so the same binary can present as
-// "spider-verse#" or "webhead#".
+// "friendlyportal#" or "webhead#".
 type Shell struct {
 	St        *device.State
 	Extended  bool
@@ -85,7 +85,7 @@ func (sh *Shell) user() string {
 	if sh.User != "" {
 		return sh.User
 	}
-	return "spider"
+	return "webhead"
 }
 
 // Banner is the login MOTD shown on SSH connect: a unix-style welcome with live

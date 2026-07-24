@@ -69,7 +69,7 @@ run flags (override the image manifest):
 
 examples:
   webhead                                   # run the embedded demo image
-  webhead run ~/dev/spiderverse-os          # run the Spider-Verse OS image
+  webhead run examples/friendlyportal-os    # run the FriendlyPortal demo image
   webhead run . --setup-hosts               # run this dir's image, map its domain
 `)
 }

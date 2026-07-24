@@ -28,9 +28,9 @@ func TestShellHelpListsCommands(t *testing.T) {
 }
 
 func TestShellStatusShowsSSID(t *testing.T) {
-	sh := &Shell{St: shellState(), SSID: "Spider-Verse"}
+	sh := &Shell{St: shellState(), SSID: "Demo"}
 	out := sh.Run("status")
-	if !strings.Contains(out, "Spider-Verse") || !strings.Contains(out, "OPEN") {
+	if !strings.Contains(out, "Demo") || !strings.Contains(out, "OPEN") {
 		t.Fatalf("status:\n%s", out)
 	}
 }
@@ -108,14 +108,14 @@ func TestShellClearAndAliasAlwaysAvailable(t *testing.T) {
 }
 
 func TestShellExtendedExtras(t *testing.T) {
-	ext := &Shell{St: shellState(), Extended: true, User: "spider", Hostname: "spider-verse"}
+	ext := &Shell{St: shellState(), Extended: true, User: "demo", Hostname: "demo"}
 	if ext.Run("version") != "webhead "+Version {
 		t.Fatalf("version: %q", ext.Run("version"))
 	}
-	if ext.Run("hostname") != "spider-verse" {
+	if ext.Run("hostname") != "demo" {
 		t.Fatalf("hostname: %q", ext.Run("hostname"))
 	}
-	if !strings.Contains(ext.Run("id"), "spider") {
+	if !strings.Contains(ext.Run("id"), "demo") {
 		t.Fatalf("id: %q", ext.Run("id"))
 	}
 	if ext.Run("echo hello there") != "hello there" {
@@ -177,7 +177,7 @@ func TestShellExtendedOnlyWhenEnabled(t *testing.T) {
 		t.Fatal("whoami should be unknown in faithful mode")
 	}
 	ext := &Shell{St: shellState(), Extended: true}
-	if strings.TrimSpace(ext.Run("whoami")) != "spider" {
+	if strings.TrimSpace(ext.Run("whoami")) != "webhead" {
 		t.Fatalf("whoami=%q", ext.Run("whoami"))
 	}
 }
