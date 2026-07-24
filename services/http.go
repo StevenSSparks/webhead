@@ -97,7 +97,14 @@ func NewHandler(st *device.State, service string) http.Handler {
 			})
 			st.NoteHit(service, clientIP(r), "/api/stats", http.StatusOK)
 		default:
-			if !serve(w, r, path.Clean(p)) {
+			// serve the requested path, resolving directory-style requests
+			// (e.g. /heroes/, /arcade/) to their index.html
+			clean := path.Clean(p)
+			switch {
+			case strings.HasSuffix(p, "/") && serve(w, r, clean+"/index.html"):
+			case serve(w, r, clean):
+			case serve(w, r, clean+"/index.html"):
+			default:
 				redirect(w, r) // captive-portal behavior for anything unknown
 			}
 		}

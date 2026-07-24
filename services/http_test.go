@@ -55,6 +55,18 @@ func TestGameServed(t *testing.T) {
 	}
 }
 
+func TestDirectoryIndexServed(t *testing.T) {
+	st := device.New(fstest.MapFS{
+		"index.html":        {Data: []byte("home")},
+		"heroes/index.html": {Data: []byte("heroes home")},
+	})
+	h := NewHandler(st, "HTTP")
+	rec := do(h, "GET", "/heroes/")
+	if rec.Code != 200 || rec.Body.String() != "heroes home" {
+		t.Fatalf("dir index: code=%d body=%q", rec.Code, rec.Body.String())
+	}
+}
+
 func TestStatsJSON(t *testing.T) {
 	st := testState()
 	h := NewHandler(st, "HTTP")
