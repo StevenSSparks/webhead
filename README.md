@@ -32,6 +32,13 @@ The landing page and the live console (`webhead run`, then browse the site and o
 
 ![Webhead live console](docs/webhead-console.png)
 
+## 📖 Make your own
+
+New here? **[docs/MAKE-YOUR-OWN.md](docs/MAKE-YOUR-OWN.md)** is a zero-to-hardware,
+copy-paste walkthrough: install → make an image → customize it → test locally →
+add a real domain + free HTTPS cert → flash it onto an ESP32. To just tweak the
+demo, see [examples/friendlyportal-os/README.md](examples/friendlyportal-os/README.md).
+
 ## Install & run
 
 ```bash
