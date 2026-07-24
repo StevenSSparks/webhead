@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Webhead — live console</title>
+<style>
+  :root { --bg:#0b0e17; --panel:#141a2b; --red:#e2213b; --blue:#2ac3ff; --ink:#e8ecf6; --dim:#8a93ad; --edge:#212a44; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; }
+  header { padding:14px 20px; background:linear-gradient(90deg,#1a0208,#0b0e17); border-bottom:2px solid var(--red); }
+  h1 { margin:0; font-size:18px; letter-spacing:.5px; } h1 span { color:var(--red); }
+  h1 small { color:var(--dim); font-weight:normal; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; padding:14px; }
+  .panel { background:var(--panel); border:1px solid var(--edge); border-radius:10px; padding:12px; min-height:120px; }
+  .panel h2 { margin:0 0 8px; font-size:13px; color:var(--dim); text-transform:uppercase; letter-spacing:1px; }
+  .tiles { display:flex; gap:10px; flex-wrap:wrap; }
+  .tile { flex:1 1 90px; background:#0f1526; border-radius:8px; padding:10px; text-align:center; }
+  .tile b { display:block; font-size:22px; color:var(--blue); } .tile small { color:var(--dim); }
+  .feed { max-height:340px; overflow:auto; font-size:12.5px; }
+  .row { padding:3px 6px; border-bottom:1px solid #1a2136; white-space:pre-wrap; border-left:3px solid transparent; }
+  .row.HTTP { border-left-color:var(--blue); } .row.HTTPS { border-left-color:var(--red); } .row.SYS { border-left-color:#6c7; }
+  .dns { padding:3px 6px; border-bottom:1px solid #1a2136; } .dns .name { color:var(--blue); } .dns .arr { color:var(--dim); }
+  .explain { grid-column:1 / -1; color:var(--dim); font-size:13px; }
+  .explain code { color:var(--ink); }
+  @media (max-width:720px){ .grid { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<header><h1>🕸️ <span>WEBHEAD</span> — live console <small>(emulator)</small></h1></header>
+<div class="grid">
+  <div class="panel"><h2>Summary</h2><div class="tiles" id="tiles"></div></div>
+  <div class="panel"><h2>DNS — every name → the board</h2><div class="feed" id="dns"></div></div>
+  <div class="panel" style="grid-column:1 / -1"><h2>Live capture — web hits</h2><div class="feed" id="cap"></div></div>
+  <div class="panel explain">
+    <h2>How the capture works</h2>
+    A device joins the Wi-Fi. Its OS probes a URL like <code>/generate_204</code>
+    to test for internet. The board's DNS answers <em>every</em> lookup with its
+    own address, so that probe hits the board and gets a <code>302</code> redirect
+    — the phone shows the captive-portal popup. Browsing the site's domain
+    resolves to the board too, served with its cert. Watch it all stream above.
+  </div>
+</div>
+<script>
+async function j(u){ const r=await fetch(u,{cache:'no-store'}); return r.json(); }
+function esc(s){ return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+async function tick(){
+  try {
+    const s = await j('/api/summary');
+    document.getElementById('tiles').innerHTML =
+      [['uptimeSec','uptime s'],['clients','sessions'],['visitors','visitors'],['totalOpens','games opened']]
+      .map(([k,l])=>`<div class="tile"><b>${s[k]}</b><small>${l}</small></div>`).join('');
+    const cap = await j('/api/capture');
+    document.getElementById('cap').innerHTML = cap.map(e=>
+      `<div class="row ${esc(e.Service)}">${esc(e.Text||(e.Service+' '+e.URI))}</div>`).join('')
+      || '<div class="row">no hits yet — browse the site</div>';
+    const dns = await j('/api/dns');
+    document.getElementById('dns').innerHTML = dns.map(d=>
+      `<div class="dns"><span class="name">${esc(d.Name)}</span> <span class="arr">→</span> ${esc(d.Answer)}</div>`).join('')
+      || '<div class="dns">no lookups yet</div>';
+  } catch(e){}
+}
+tick(); setInterval(tick, 1500);
+</script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+# build output
+/webhead
+webhead
+
+# real TLS keys never belong in git
+*.pem
+
+.DS_Store

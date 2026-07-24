@@ -1,0 +1,16 @@
+{
+  "name": "Webhead Demo",
+  "hostname": "webhead",
+  "prompt": "webhead# ",
+  "ssid": "Webhead",
+  "domain": "webhead.local",
+  "dnsAnswer": "127.0.0.1",
+  "extendedShell": false,
+  "services": {
+    "http":      { "enabled": true, "addr": ":8080" },
+    "https":     { "enabled": true, "addr": ":8443", "certDir": "certs" },
+    "dns":       { "enabled": true, "addr": ":5354" },
+    "ssh":       { "enabled": true, "addr": ":2222", "user": "webhead", "pass": "webhead" },
+    "dashboard": { "enabled": true, "addr": ":9090" }
+  }
+}

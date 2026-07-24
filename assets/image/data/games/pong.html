@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo Pong</title>
+<style>
+  body { margin:0; background:#0b0e17; color:#e8ecf6; font:14px ui-monospace,monospace; display:grid; place-items:center; min-height:100vh; }
+  canvas { background:#0f1526; border:1px solid #212a44; border-radius:10px; touch-action:none; }
+  a { color:#2ac3ff; }
+</style>
+</head>
+<body>
+  <div style="text-align:center">
+    <canvas id="c" width="360" height="240"></canvas>
+    <p>Move your mouse / finger. <a href="/">← Portal</a></p>
+  </div>
+<script>
+const c=document.getElementById('c'),x=c.getContext('2d');
+let py=100, by=120, bx=180, vx=2.4, vy=1.8, s=0;
+c.addEventListener('mousemove',e=>{py=e.offsetY-25;});
+c.addEventListener('touchmove',e=>{const r=c.getBoundingClientRect();py=e.touches[0].clientY-r.top-25;e.preventDefault();});
+function loop(){
+  bx+=vx; by+=vy;
+  if(by<4||by>236)vy=-vy;
+  if(bx>352)vx=-vx;
+  if(bx<14){ if(by>py&&by<py+50){vx=-vx;s++;} else {bx=180;by=120;s=0;} }
+  x.clearRect(0,0,360,240);
+  x.fillStyle='#2ac3ff'; x.fillRect(6,py,6,50); x.beginPath(); x.arc(bx,by,5,0,7); x.fill();
+  x.fillStyle='#8a93ad'; x.fillText('score '+s,300,20);
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>
