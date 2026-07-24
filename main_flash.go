@@ -132,6 +132,30 @@ func cmdFlashBoard(args []string) {
 	fmt.Println("==> done. Reboot the board; it now serves this image's data/ over LittleFS.")
 }
 
+// cmdMonitor opens the board's serial console (wraps `arduino-cli monitor`).
+func cmdMonitor(args []string) {
+	fset := flag.NewFlagSet("monitor", flag.ExitOnError)
+	port := fset.String("port", "", "serial port (auto-detected if empty)")
+	baud := fset.Int("baud", 115200, "baud rate")
+	fset.Parse(args)
+
+	acli, err := exec.LookPath("arduino-cli")
+	if err != nil {
+		fatal(fmt.Errorf("arduino-cli not found — run: webhead doctor --install"))
+	}
+	p := *port
+	if p == "" {
+		p = detectPort()
+	}
+	if p == "" {
+		fatal(fmt.Errorf("no serial port found — plug in the board or pass --port /dev/cu.usbmodemXXXX"))
+	}
+	fmt.Printf("==> serial monitor: %s @ %d baud   (Ctrl-C to quit)\n", p, *baud)
+	cmd := exec.Command(acli, "monitor", "-p", p, "-c", "baudrate="+strconv.Itoa(*baud))
+	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+	_ = cmd.Run()
+}
+
 // flashFullImage writes a complete prebuilt image (bootloader+partitions+app+FS)
 // at offset 0x0.
 func flashFullImage(path, chip, port string, confirm bool) {

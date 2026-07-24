@@ -43,6 +43,8 @@ func main() {
 		cmdBuildImage(args[1:])
 	case "doctor":
 		cmdDoctor(args[1:])
+	case "monitor":
+		cmdMonitor(args[1:])
 	case "version", "ver", "--version", "-v":
 		fmt.Println("webhead " + services.Version)
 	case "-h", "--help", "help":
@@ -65,6 +67,7 @@ usage:
   webhead build-image <image>   compile firmware + build FS -> one flashable .bin
   webhead flash-board <image>   flash the site (or --image <bin> for a full image); --confirm to write
   webhead doctor [--install]    check / install the hardware toolchain
+  webhead monitor [--port P]    open the board's serial console
 
 run flags (override the image manifest):
   --http :8080     --https :8443    --dns :5354     --ssh :2222    --dash :9090
