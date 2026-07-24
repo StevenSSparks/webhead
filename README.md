@@ -35,6 +35,17 @@ open http://localhost:9090    # watch the live console
 
 Or from a clone: `go build -o webhead . && ./webhead`.
 
+### One-shot setup script
+
+`setup.sh` builds, clears any stale SSH host key for the image's port, and runs
+with `--setup-hosts` (so the domain resolves locally):
+
+```bash
+./setup.sh ~/dev/spiderverse-os     # build + host-map + run on 80/443/53 (uses sudo)
+SUDO="" ./setup.sh ~/dev/spiderverse-os   # no sudo (image must use unprivileged ports)
+NO_HOSTS=1 ./setup.sh                # don't touch /etc/hosts; run the demo image
+```
+
 ## Commands
 
 | Command | What it does |
