@@ -24,6 +24,14 @@ $ webhead run examples/friendlyportal-os
   DASH  (console) → http://localhost:9090
 ```
 
+### The bundled FriendlyPortal OS demo
+
+The landing page and the live console (`webhead run`, then browse the site and open `:9090`):
+
+![FriendlyPortal OS landing](docs/friendlyportal-landing.png)
+
+![Webhead live console](docs/webhead-console.png)
+
 ## Install & run
 
 ```bash
