@@ -24,10 +24,11 @@ func (s *Stats) NoteVisitor(ip string) {
 	s.visitors[ip] = struct{}{}
 }
 
-// NoteGameOpen increments the counter for a /games/<name>.html URI; other URIs
-// are ignored.
+// NoteGameOpen increments the counter for a game page — any ".html" under a
+// "games/" segment (e.g. /games/2048.html or /arcade/games/2048.html). Other
+// URIs are ignored.
 func (s *Stats) NoteGameOpen(uri string) {
-	if !strings.HasPrefix(uri, "/games/") || !strings.HasSuffix(uri, ".html") {
+	if !strings.Contains(uri, "/games/") || !strings.HasSuffix(uri, ".html") {
 		return
 	}
 	name := uri[strings.LastIndexByte(uri, '/')+1 : len(uri)-len(".html")]

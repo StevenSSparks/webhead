@@ -15,7 +15,7 @@ func TestStatsVisitorsUnique(t *testing.T) {
 func TestStatsGameOpen(t *testing.T) {
 	s := NewStats()
 	s.NoteGameOpen("/games/2048.html")
-	s.NoteGameOpen("/games/2048.html")
+	s.NoteGameOpen("/arcade/games/2048.html") // nested path counts too
 	s.NoteGameOpen("/games/simon.html")
 	s.NoteGameOpen("/index.html") // not a game, ignored
 	if s.TotalOpens() != 3 {
