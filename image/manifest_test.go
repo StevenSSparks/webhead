@@ -28,7 +28,7 @@ func TestLoadMergesOverDefaults(t *testing.T) {
 	  "services": { "ssh": { "enabled": true, "user": "demo", "pass": "demo" },
 	                "dns": { "enabled": false } }
 	}`
-	os.WriteFile(filepath.Join(dir, "webhead.json"), []byte(cfg), 0644)
+	os.WriteFile(filepath.Join(dir, "roost.json"), []byte(cfg), 0644)
 
 	im, err := Load(dir)
 	if err != nil {
@@ -38,7 +38,7 @@ func TestLoadMergesOverDefaults(t *testing.T) {
 	if m.Name != "Demo OS" || m.Domain != "demo.net" {
 		t.Fatalf("overrides not applied: %+v", m)
 	}
-	if m.SSID != "Webhead" { // untouched field keeps default
+	if m.SSID != "Roost" { // untouched field keeps default
 		t.Fatalf("default SSID lost: %q", m.SSID)
 	}
 	ssh, _ := m.Svc("ssh")

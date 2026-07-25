@@ -11,7 +11,7 @@ import (
 	"testing/fstest"
 	"time"
 
-	"github.com/stevenssparks/webhead/device"
+	"github.com/stevenssparks/roost/device"
 	xssh "golang.org/x/crypto/ssh"
 )
 

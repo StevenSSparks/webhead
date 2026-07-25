@@ -6,7 +6,7 @@ import (
 	"testing"
 	"testing/fstest"
 
-	"github.com/stevenssparks/webhead/device"
+	"github.com/stevenssparks/roost/device"
 )
 
 func TestDashboardCaptureAPI(t *testing.T) {

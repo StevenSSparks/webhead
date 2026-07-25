@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-const hostsMarker = "webhead"
+const hostsMarker = "roost"
 
 func hostsLine(domain, ip string) string {
 	return fmt.Sprintf("%s\t%s # %s", ip, domain, hostsMarker)
@@ -25,7 +25,7 @@ func ensureHostsEntry(domain, ip string) string {
 	}
 	f, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
-		return "could not write /etc/hosts (try: sudo webhead run --setup-hosts): " + err.Error()
+		return "could not write /etc/hosts (try: sudo roost run --setup-hosts): " + err.Error()
 	}
 	defer f.Close()
 	if _, err := f.WriteString("\n" + hostsLine(domain, ip) + "\n"); err != nil {

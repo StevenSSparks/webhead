@@ -43,7 +43,7 @@ func fileExists(p string) bool {
 
 func generateSelfSigned(domain string) (tls.Certificate, error) {
 	if domain == "" {
-		domain = "webhead.local"
+		domain = "roost.local"
 	}
 	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
@@ -51,7 +51,7 @@ func generateSelfSigned(domain string) (tls.Certificate, error) {
 	}
 	tmpl := x509.Certificate{
 		SerialNumber: big.NewInt(1),
-		Subject:      pkix.Name{CommonName: domain, Organization: []string{"Webhead (emulator)"}},
+		Subject:      pkix.Name{CommonName: domain, Organization: []string{"Roost (emulator)"}},
 		NotBefore:    time.Now().Add(-time.Hour),
 		NotAfter:     time.Now().Add(365 * 24 * time.Hour),
 		KeyUsage:     x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,

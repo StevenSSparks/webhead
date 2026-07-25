@@ -5,7 +5,7 @@ import (
 	"testing"
 	"testing/fstest"
 
-	"github.com/stevenssparks/webhead/device"
+	"github.com/stevenssparks/roost/device"
 )
 
 func shellState() *device.State {
@@ -109,7 +109,7 @@ func TestShellClearAndAliasAlwaysAvailable(t *testing.T) {
 
 func TestShellExtendedExtras(t *testing.T) {
 	ext := &Shell{St: shellState(), Extended: true, User: "demo", Hostname: "demo"}
-	if ext.Run("version") != "webhead "+Version {
+	if ext.Run("version") != "roost "+Version {
 		t.Fatalf("version: %q", ext.Run("version"))
 	}
 	if ext.Run("hostname") != "demo" {
@@ -177,7 +177,7 @@ func TestShellExtendedOnlyWhenEnabled(t *testing.T) {
 		t.Fatal("whoami should be unknown in faithful mode")
 	}
 	ext := &Shell{St: shellState(), Extended: true}
-	if strings.TrimSpace(ext.Run("whoami")) != "webhead" {
+	if strings.TrimSpace(ext.Run("whoami")) != "roost" {
 		t.Fatalf("whoami=%q", ext.Run("whoami"))
 	}
 }

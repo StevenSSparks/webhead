@@ -1,5 +1,5 @@
-// Package image loads a Webhead device image — a directory holding a
-// webhead.json manifest, a data/ payload, and optional certs/ — and resolves it
+// Package image loads a Roost device image — a directory holding a
+// roost.json manifest, a data/ payload, and optional certs/ — and resolves it
 // against built-in defaults so the runtime can boot from it.
 package image
 
@@ -23,7 +23,7 @@ type Service struct {
 	CertDir string `json:"certDir,omitempty"` // https, relative to image dir
 }
 
-// Manifest is the parsed webhead.json.
+// Manifest is the parsed roost.json.
 type Manifest struct {
 	Name          string             `json:"name"`
 	Hostname      string             `json:"hostname"`
@@ -54,18 +54,18 @@ var defaultAddrs = map[string]string{
 // the merge base for every loaded image (omitted fields inherit these).
 func Default() Manifest {
 	return Manifest{
-		Name:          "Webhead",
-		Hostname:      "webhead",
-		Prompt:        "webhead# ",
-		SSID:          "Webhead",
-		Domain:        "webhead.local",
+		Name:          "Roost",
+		Hostname:      "roost",
+		Prompt:        "roost# ",
+		SSID:          "Roost",
+		Domain:        "roost.local",
 		DNSAnswer:     "127.0.0.1",
 		ExtendedShell: false,
 		Services: map[string]Service{
 			"http":      {Enabled: true, Addr: ":8080"},
 			"https":     {Enabled: true, Addr: ":8443", CertDir: "certs"},
 			"dns":       {Enabled: true, Addr: ":5354"},
-			"ssh":       {Enabled: true, Addr: ":2222", User: "webhead", Pass: "webhead"},
+			"ssh":       {Enabled: true, Addr: ":2222", User: "roost", Pass: "roost"},
 			"dashboard": {Enabled: true, Addr: ":9090"},
 		},
 	}
@@ -160,7 +160,7 @@ func mergeInto(m *Manifest, data []byte) error {
 // Load reads and validates an on-disk image directory.
 func Load(dir string) (*Image, error) {
 	m := Default()
-	cfg := filepath.Join(dir, "webhead.json")
+	cfg := filepath.Join(dir, "roost.json")
 	if b, err := os.ReadFile(cfg); err == nil {
 		if err := mergeInto(&m, b); err != nil {
 			return nil, fmt.Errorf("%s: %w", cfg, err)
@@ -183,9 +183,9 @@ func Load(dir string) (*Image, error) {
 // LoadFS reads and validates an image from an fs.FS (the embedded demo image).
 func LoadFS(fsys fs.FS) (*Image, error) {
 	m := Default()
-	if b, err := fs.ReadFile(fsys, "webhead.json"); err == nil {
+	if b, err := fs.ReadFile(fsys, "roost.json"); err == nil {
 		if err := mergeInto(&m, b); err != nil {
-			return nil, fmt.Errorf("embedded webhead.json: %w", err)
+			return nil, fmt.Errorf("embedded roost.json: %w", err)
 		}
 	} else {
 		normalize(&m)
@@ -213,7 +213,7 @@ func (im *Image) CertDirPath() string {
 	return filepath.Join(im.Dir, svc.CertDir)
 }
 
-// Summary renders the resolved config for `webhead flash` (dry run).
+// Summary renders the resolved config for `roost flash` (dry run).
 func (im *Image) Summary() string {
 	m := im.Manifest
 	src := im.Dir

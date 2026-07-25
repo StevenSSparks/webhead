@@ -1,4 +1,4 @@
-// Package services implements Webhead's emulated network services (HTTP, HTTPS,
+// Package services implements Roost's emulated network services (HTTP, HTTPS,
 // DNS, SSH, dashboard) over a shared device.State.
 package services
 
@@ -9,7 +9,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/stevenssparks/webhead/device"
+	"github.com/stevenssparks/roost/device"
 )
 
 var captiveProbes = map[string]bool{
@@ -78,7 +78,7 @@ func NewHandler(st *device.State, service string) http.Handler {
 		case p == "/":
 			if !serve(w, r, "/index.html") {
 				w.Header().Set("Content-Type", "text/html; charset=utf-8")
-				w.Write([]byte("<h1>Webhead</h1><p>image payload missing</p>"))
+				w.Write([]byte("<h1>Roost</h1><p>image payload missing</p>"))
 				st.NoteHit(service, clientIP(r), "/", http.StatusOK)
 			}
 		case p == "/spidey-admin":

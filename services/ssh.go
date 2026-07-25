@@ -14,7 +14,7 @@ import (
 	"time"
 
 	gssh "github.com/gliderlabs/ssh"
-	"github.com/stevenssparks/webhead/device"
+	"github.com/stevenssparks/roost/device"
 	xssh "golang.org/x/crypto/ssh"
 )
 
@@ -158,7 +158,7 @@ func loadOrCreateHostKey(path string) (gssh.Signer, error) {
 	if err != nil {
 		return nil, err
 	}
-	blk, err := xssh.MarshalPrivateKey(priv, "webhead")
+	blk, err := xssh.MarshalPrivateKey(priv, "roost")
 	if err != nil {
 		return nil, err
 	}

@@ -8,18 +8,18 @@ import (
 	"strings"
 	"time"
 
-	"github.com/stevenssparks/webhead/device"
+	"github.com/stevenssparks/roost/device"
 )
 
-// Version is the webhead release, surfaced by the `version`/`ver` commands and
+// Version is the roost release, surfaced by the `version`/`ver` commands and
 // the CLI. Override at build time with:
 //
-//	go build -ldflags "-X github.com/stevenssparks/webhead/services.Version=1.2.3"
+//	go build -ldflags "-X github.com/stevenssparks/roost/services.Version=1.2.3"
 var Version = "0.1.0"
 
 // Shell is the device mini-shell. Its identity (prompt, ssid, title, hostname,
 // user) comes from the image manifest so the same binary can present as
-// "friendlyportal#" or "webhead#".
+// "friendlyportal#" or "roost#".
 type Shell struct {
 	St        *device.State
 	Extended  bool
@@ -59,7 +59,7 @@ func (sh *Shell) resolve(arg string) string {
 
 func (sh *Shell) promptLine() string {
 	if sh.Prompt == "" {
-		return "webhead# "
+		return "roost# "
 	}
 	return sh.Prompt
 }
@@ -67,25 +67,25 @@ func (sh *Shell) title() string {
 	if sh.Title != "" {
 		return sh.Title
 	}
-	return "WEBHEAD OS"
+	return "RoostOS"
 }
 func (sh *Shell) ssid() string {
 	if sh.SSID != "" {
 		return sh.SSID
 	}
-	return "Webhead"
+	return "Roost"
 }
 func (sh *Shell) hostname() string {
 	if sh.Hostname != "" {
 		return sh.Hostname
 	}
-	return "webhead"
+	return "roost"
 }
 func (sh *Shell) user() string {
 	if sh.User != "" {
 		return sh.User
 	}
-	return "webhead"
+	return "roost"
 }
 
 // Banner is the login MOTD shown on SSH connect: a unix-style welcome with live
@@ -95,7 +95,7 @@ func (sh *Shell) Banner() string {
 	line := strings.Repeat("-", 56)
 	var b strings.Builder
 	fmt.Fprintf(&b, "  ,---.    %s\n", sh.title())
-	fmt.Fprintf(&b, " ( o o )   webhead %s\n", Version)
+	fmt.Fprintf(&b, " ( o o )   roost %s\n", Version)
 	fmt.Fprintf(&b, "  >|_|<    %s\n", line)
 	fmt.Fprintf(&b, "   Welcome, %s. You're on the %s appliance.\n\n", sh.user(), sh.title())
 	fmt.Fprintf(&b, "   host    : %-24s  uptime   : %ds\n", sh.hostname(), st.UptimeSec())
@@ -174,8 +174,8 @@ func init() {
 		"date":     {summary: "current date/time", extended: true, man: "date\n\nPrint the current date and time.", run: (*Shell).cmdDate},
 		"uname":    {summary: "system name", extended: true, man: "uname\n\nPrint the (emulated) system identification.", run: (*Shell).cmdUname},
 		"hostname": {summary: "device hostname", extended: true, man: "hostname\n\nPrint the device hostname.", run: (*Shell).cmdHostname},
-		"version":  {summary: "webhead version", extended: true, man: "version\n\nPrint the webhead version. (alias: ver)", run: (*Shell).cmdVersion},
-		"ver":      {summary: "webhead version (alias)", extended: true, man: "ver\n\nAlias for `version`.", run: (*Shell).cmdVersion},
+		"version":  {summary: "roost version", extended: true, man: "version\n\nPrint the roost version. (alias: ver)", run: (*Shell).cmdVersion},
+		"ver":      {summary: "roost version (alias)", extended: true, man: "ver\n\nAlias for `version`.", run: (*Shell).cmdVersion},
 		"history":  {summary: "command history", extended: true, man: "history\n\nShow the commands entered this session.", run: (*Shell).cmdHistory},
 		"about":    {summary: "about this device", extended: true, man: "about\n\nShow a summary splash for this device.", run: (*Shell).cmdAbout},
 	}
@@ -441,7 +441,7 @@ func (sh *Shell) cmdUname(arg string) string {
 	return fmt.Sprintf("%s (emulator) xtensa-esp32s3", sh.title())
 }
 func (sh *Shell) cmdHostname(arg string) string { return sh.hostname() }
-func (sh *Shell) cmdVersion(arg string) string  { return "webhead " + Version }
+func (sh *Shell) cmdVersion(arg string) string  { return "roost " + Version }
 
 func (sh *Shell) cmdHistory(arg string) string {
 	if len(sh.history) == 0 {
@@ -547,7 +547,7 @@ func (sh *Shell) cmdAbout(arg string) string {
 			"  ---🕷---   uptime : %ds\n"+
 			"    / \\     memory : %d KB heap / %d KB psram (emulated)\n"+
 			"   /   \\    served : %d games opened, %d visitors\n"+
-			"           webhead %s",
+			"           roost %s",
 		sh.title(), sh.hostname(), sh.ssid(), st.UptimeSec(),
 		st.HeapKB(), st.PsramKB(), st.Stats.TotalOpens(), st.Stats.Visitors(), Version)
 }

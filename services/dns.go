@@ -4,7 +4,7 @@ import (
 	"net"
 
 	"github.com/miekg/dns"
-	"github.com/stevenssparks/webhead/device"
+	"github.com/stevenssparks/roost/device"
 )
 
 // NewDNSHandler answers every A/ANY query for any name with answerIP (TTL 30)

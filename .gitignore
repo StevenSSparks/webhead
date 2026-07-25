@@ -1,12 +1,12 @@
 # build output
-/webhead
-webhead
+/roost
+roost
 
 # real TLS keys never belong in git
 *.pem
 
 .DS_Store
 
-# built flash images (regenerate with `webhead build-image`)
+# built flash images (regenerate with `roost build-image`)
 examples/*/build/
 *.bin

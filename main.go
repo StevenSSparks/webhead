@@ -1,4 +1,4 @@
-// Command webhead flashes a device image and boots its emulated services:
+// Command roost flashes a device image and boots its emulated services:
 // captive-portal HTTP, HTTPS, a DNS funnel, a live console, and an SSH mini-shell.
 package main
 
@@ -16,10 +16,10 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/stevenssparks/webhead/assets"
-	"github.com/stevenssparks/webhead/device"
-	"github.com/stevenssparks/webhead/image"
-	"github.com/stevenssparks/webhead/services"
+	"github.com/stevenssparks/roost/assets"
+	"github.com/stevenssparks/roost/device"
+	"github.com/stevenssparks/roost/image"
+	"github.com/stevenssparks/roost/services"
 )
 
 func main() {
@@ -46,28 +46,28 @@ func main() {
 	case "monitor":
 		cmdMonitor(args[1:])
 	case "version", "ver", "--version", "-v":
-		fmt.Println("webhead " + services.Version)
+		fmt.Println("roost " + services.Version)
 	case "-h", "--help", "help":
 		usage()
 	default:
-		// `webhead ./image` or `webhead --extended` → treat as run.
+		// `roost ./image` or `roost --extended` → treat as run.
 		cmdRun(args)
 	}
 }
 
 func usage() {
-	fmt.Print(`webhead — a captive-portal appliance emulator in a box
+	fmt.Print(`roost — a captive-portal appliance emulator in a box
 
 usage:
-  webhead run [image] [flags]   flash an image (or the embedded demo) and boot it
-  webhead flash [image]         validate an image and print the config it would boot
-  webhead init [dir]            scaffold a new image (webhead.json + data/)
-  webhead cert status <image>   show the image's installed TLS cert + expiry
-  webhead cert refresh <image>  renew (acme.sh) and install the cert into the image
-  webhead build-image <image>   compile firmware + build FS -> one flashable .bin
-  webhead flash-board <image>   flash the site (or --image <bin> for a full image); --confirm to write
-  webhead doctor [--install]    check / install the hardware toolchain
-  webhead monitor [--port P]    open the board's serial console
+  roost run [image] [flags]   flash an image (or the embedded demo) and boot it
+  roost flash [image]         validate an image and print the config it would boot
+  roost init [dir]            scaffold a new image (roost.json + data/)
+  roost cert status <image>   show the image's installed TLS cert + expiry
+  roost cert refresh <image>  renew (acme.sh) and install the cert into the image
+  roost build-image <image>   compile firmware + build FS -> one flashable .bin
+  roost flash-board <image>   flash the site (or --image <bin> for a full image); --confirm to write
+  roost doctor [--install]    check / install the hardware toolchain
+  roost monitor [--port P]    open the board's serial console
 
 run flags (override the image manifest):
   --http :8080     --https :8443    --dns :5354     --ssh :2222    --dash :9090
@@ -77,9 +77,9 @@ run flags (override the image manifest):
   --lan            future: bind real LAN ports (not implemented)
 
 examples:
-  webhead                                   # run the embedded demo image
-  webhead run examples/friendlyportal-os    # run the FriendlyPortal demo image
-  webhead run . --setup-hosts               # run this dir's image, map its domain
+  roost                                   # run the embedded demo image
+  roost run examples/friendlyportal    # run the FriendlyPortal demo image
+  roost run . --setup-hosts               # run this dir's image, map its domain
 `)
 }
 
@@ -127,7 +127,7 @@ func cmdInit(args []string) {
 	if err := os.MkdirAll(filepath.Join(dir, "data"), 0755); err != nil {
 		fatal(err)
 	}
-	cfg := filepath.Join(dir, "webhead.json")
+	cfg := filepath.Join(dir, "roost.json")
 	if _, err := os.Stat(cfg); os.IsNotExist(err) {
 		b, _ := json.MarshalIndent(image.Default(), "", "  ")
 		if err := os.WriteFile(cfg, append(b, '\n'), 0644); err != nil {
@@ -136,9 +136,9 @@ func cmdInit(args []string) {
 	}
 	idx := filepath.Join(dir, "data", "index.html")
 	if _, err := os.Stat(idx); os.IsNotExist(err) {
-		os.WriteFile(idx, []byte("<!doctype html><meta charset=utf-8><title>My image</title><h1>Hello from Webhead</h1><p>Edit data/index.html.</p>\n"), 0644)
+		os.WriteFile(idx, []byte("<!doctype html><meta charset=utf-8><title>My image</title><h1>Hello from Roost</h1><p>Edit data/index.html.</p>\n"), 0644)
 	}
-	fmt.Printf("scaffolded image in %s\n  edit webhead.json + data/, then:  webhead run %s\n", dir, dir)
+	fmt.Printf("scaffolded image in %s\n  edit roost.json + data/, then:  roost run %s\n", dir, dir)
 }
 
 func cmdRun(args []string) {
@@ -351,10 +351,10 @@ func flagFor(key string) string {
 // for on-disk images, or the user config dir for the embedded demo.
 func hostKeyPath(im *image.Image) string {
 	if im.Dir != "" {
-		return filepath.Join(im.Dir, ".webhead", "ssh_host_key")
+		return filepath.Join(im.Dir, ".roost", "ssh_host_key")
 	}
 	if cfg, err := os.UserConfigDir(); err == nil {
-		return filepath.Join(cfg, "webhead", "ssh_host_key")
+		return filepath.Join(cfg, "roost", "ssh_host_key")
 	}
 	return ""
 }

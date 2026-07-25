@@ -1,9 +1,9 @@
-# 🕸️ Webhead
+# 🕸️ Roost
 
 **A captive-portal appliance in a box — DNS funnel, HTTPS, a live console, and a
 real SSH mini-shell. Point it at any static site.**
 
-Webhead is a single Go binary that **flashes a device image and boots it**: it
+Roost is a single Go binary that **flashes a device image and boots it**: it
 broadcasts a captive-portal welcome, funnels every DNS name to itself, serves the
 image's site over HTTP + HTTPS, streams a live console, and lets you `ssh` into a
 little unix-like shell — all on localhost, no hardware, no sudo.
@@ -11,11 +11,11 @@ little unix-like shell — all on localhost, no hardware, no sudo.
 It began as a way to test a personal Seeed XIAO ESP32-S3 captive-portal
 appliance on a laptop, and generalized into a reusable tool: anything with a
 captive portal, a wildcard-DNS trick, and an admin shell. The bundled
-**FriendlyPortal OS** example (`examples/friendlyportal-os/`) is a full demo and
+**FriendlyPortal OS** example (`examples/friendlyportal/`) is a full demo and
 self-documenting tour.
 
 ```
-$ webhead run examples/friendlyportal-os
+$ roost run examples/friendlyportal
 🕸️  flashing image: FriendlyPortal OS
   HTTP  (portal)  → http://localhost:8080
   HTTPS (secure)  → https://localhost:8443   (or https://friendlyportal.local after --setup-hosts)
@@ -26,32 +26,32 @@ $ webhead run examples/friendlyportal-os
 
 ### The bundled FriendlyPortal OS demo
 
-The landing page and the live console (`webhead run`, then browse the site and open `:9090`):
+The landing page and the live console (`roost run`, then browse the site and open `:9090`):
 
 ![FriendlyPortal OS landing](docs/friendlyportal-landing.png)
 
-![Webhead live console](docs/webhead-console.png)
+![Roost live console](docs/roost-console.png)
 
 ## 📖 Make your own
 
 New here? **[docs/MAKE-YOUR-OWN.md](docs/MAKE-YOUR-OWN.md)** is a zero-to-hardware,
 copy-paste walkthrough: install → make an image → customize it → test locally →
 add a real domain + free HTTPS cert → flash it onto an ESP32. To just tweak the
-demo, see [examples/friendlyportal-os/README.md](examples/friendlyportal-os/README.md).
+demo, see [examples/friendlyportal/README.md](examples/friendlyportal/README.md).
 
 ## Install & run
 
 ```bash
-brew install stevenssparks/tap/webhead   # Homebrew (recommended)
-# …or:  go install github.com/stevenssparks/webhead@latest
+brew install stevenssparks/tap/roost   # Homebrew (recommended)
+# …or:  go install github.com/stevenssparks/roost@latest
 
-webhead                       # boot the built-in demo image
-webhead run ./my-image        # boot your own image
-ssh webhead@localhost -p 2222 # log into the shell   (demo pass: webhead)
+roost                       # boot the built-in demo image
+roost run ./my-image        # boot your own image
+ssh roost@localhost -p 2222 # log into the shell   (demo pass: roost)
 open http://localhost:9090    # watch the live console
 ```
 
-Or from a clone: `go build -o webhead . && ./webhead`.
+Or from a clone: `go build -o roost . && ./roost`.
 
 ### One-shot setup script
 
@@ -59,8 +59,8 @@ Or from a clone: `go build -o webhead . && ./webhead`.
 with `--setup-hosts` (so the domain resolves locally):
 
 ```bash
-./setup.sh examples/friendlyportal-os   # build + host-map + run (uses sudo)
-SUDO="" ./setup.sh examples/friendlyportal-os  # no sudo (image uses unprivileged ports)
+./setup.sh examples/friendlyportal   # build + host-map + run (uses sudo)
+SUDO="" ./setup.sh examples/friendlyportal  # no sudo (image uses unprivileged ports)
 NO_HOSTS=1 ./setup.sh                # don't touch /etc/hosts; run the demo image
 ```
 
@@ -68,14 +68,14 @@ NO_HOSTS=1 ./setup.sh                # don't touch /etc/hosts; run the demo imag
 
 | Command | What it does |
 |---|---|
-| `webhead run [image]` | Flash the image (or the embedded demo) and boot every enabled service. |
-| `webhead flash [image]` | Load + validate an image and print the config it *would* boot (dry run). |
-| `webhead init [dir]` | Scaffold a new image (`webhead.json` + `data/index.html`). |
-| `webhead cert status <image>` | Show the image's installed TLS cert and days-to-expiry. |
-| `webhead cert refresh <image>` | Renew via acme.sh (DNS-01) and install the cert into the image. |
-| `webhead doctor [--install]` | Check / install the hardware toolchain (arduino-cli, esptool, mklittlefs, esp32 core). |
-| `webhead build-image <image>` | Compile firmware + build the filesystem → one flashable `.bin`. |
-| `webhead flash-board <image>` | Flash the filesystem, or a full `--image <bin>`, to an ESP32 (plans first; `--confirm` to write). |
+| `roost run [image]` | Flash the image (or the embedded demo) and boot every enabled service. |
+| `roost flash [image]` | Load + validate an image and print the config it *would* boot (dry run). |
+| `roost init [dir]` | Scaffold a new image (`roost.json` + `data/index.html`). |
+| `roost cert status <image>` | Show the image's installed TLS cert and days-to-expiry. |
+| `roost cert refresh <image>` | Renew via acme.sh (DNS-01) and install the cert into the image. |
+| `roost doctor [--install]` | Check / install the hardware toolchain (arduino-cli, esptool, mklittlefs, esp32 core). |
+| `roost build-image <image>` | Compile firmware + build the filesystem → one flashable `.bin`. |
+| `roost flash-board <image>` | Flash the filesystem, or a full `--image <bin>`, to an ESP32 (plans first; `--confirm` to write). |
 
 Run-flag overrides (win over the manifest): `--http :8080` `--https :8443`
 `--dns :5354` `--ssh :2222` `--dash :9090` `--ssh-user` `--ssh-pass`
@@ -87,12 +87,12 @@ An image is just a folder — so **a GitHub repo can be an image**:
 
 ```
 my-image/
-  webhead.json     manifest: identity, ports, which services run
+  roost.json     manifest: identity, ports, which services run
   data/            the site served over HTTP/HTTPS  (index.html, …)
   certs/           optional: fullchain.pem + privkey.pem
 ```
 
-`webhead.json` (every field optional — omitted fields inherit built-in defaults):
+`roost.json` (every field optional — omitted fields inherit built-in defaults):
 
 ```json
 {
@@ -127,7 +127,7 @@ rm <path>  free  uptime  wifi  dns  dhcp  who  motd  clear  cls  reboot  exit
 ```
 
 - Login shows a unix-style **MOTD** with live system stats + the image's custom
-  message (set `"motd"` in `webhead.json`).
+  message (set `"motd"` in `roost.json`).
 - **Tab-completion** for commands and file paths; `?` aliases `help`.
 - `tail` live-streams web hits (Enter to stop); `top` is a live text dashboard
   (any key to quit); `dns`/`dhcp` show network info + stats.
@@ -143,7 +143,7 @@ pwd  cd  whoami  id  echo  date  uname  hostname  version (ver)  history  about
 
 ## HTTPS & real certs
 
-Webhead serves HTTPS with the image's real cert if `<image>/<certDir>/fullchain.pem`
+Roost serves HTTPS with the image's real cert if `<image>/<certDir>/fullchain.pem`
 + `privkey.pem` are present; otherwise it generates a self-signed
 `CN=<domain>` so it always runs. To browse `https://<domain>` with a clean
 padlock locally, run once with `--setup-hosts` (needs sudo) to map the domain to
@@ -152,8 +152,8 @@ padlock locally, run once with `--setup-hosts` (needs sudo) to map the domain to
 Manage the real cert with acme.sh from the CLI:
 
 ```bash
-webhead cert status  my-portal   # CN, issuer, days to expiry
-webhead cert refresh my-portal   # renew (if due) + install into the image
+roost cert status  my-portal   # CN, issuer, days to expiry
+roost cert refresh my-portal   # renew (if due) + install into the image
 ```
 
 `cert refresh` renews the image domain's Let's Encrypt cert via DNS-01 and copies
@@ -165,13 +165,13 @@ renew before the renewal window.
 
 A device joins the Wi-Fi and probes a URL like `/generate_204` to check for
 internet. The DNS service answers **every** lookup with the board's address, so
-the probe hits Webhead and gets a `302` redirect — the phone pops the portal.
+the probe hits Roost and gets a `302` redirect — the phone pops the portal.
 Watch every hit and DNS lookup stream in the console at `:9090`.
 
 ## Roadmap — from emulator to board
 
 The image is a portable bundle, so it's also the artifact you flash to real
-hardware. `webhead flash-board` already builds a LittleFS image from `data/` and
+hardware. `roost flash-board` already builds a LittleFS image from `data/` and
 writes it to an ESP32 (it prints the plan first; `--confirm` to write). Still on
 the roadmap:
 
@@ -187,8 +187,8 @@ go vet ./...
 Packages: `image` (manifest/flash), `device` (shared live state: log ring, stats,
 virtual FS, DNS log), `services` (http, cert, dns, shell, ssh, dashboard),
 `assets` (embedded console page); the default demo image is embedded from
-`examples/friendlyportal-os/`.
+`examples/friendlyportal/`.
 
 ## License
 
-MIT © 2026 Steve Sparks — Webhead and the FriendlyPortal OS example are MIT licensed.
+MIT © 2026 Steve Sparks — Roost and the FriendlyPortal OS example are MIT licensed.

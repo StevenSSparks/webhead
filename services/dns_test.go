@@ -6,7 +6,7 @@ import (
 	"testing/fstest"
 
 	"github.com/miekg/dns"
-	"github.com/stevenssparks/webhead/device"
+	"github.com/stevenssparks/roost/device"
 )
 
 type captureWriter struct {

@@ -37,7 +37,7 @@ func TestSelectCertificateUsesRealWhenPresent(t *testing.T) {
 }
 
 func TestSelectCertificateEmptyDirFallsBack(t *testing.T) {
-	_, source, err := SelectCertificate("", "webhead.local")
+	_, source, err := SelectCertificate("", "roost.local")
 	if err != nil || source != "self-signed" {
 		t.Fatalf("source=%q err=%v", source, err)
 	}

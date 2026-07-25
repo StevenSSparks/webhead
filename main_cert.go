@@ -10,10 +10,10 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/stevenssparks/webhead/image"
+	"github.com/stevenssparks/roost/image"
 )
 
-// cmdCert handles `webhead cert <status|refresh>` — inspecting and renewing the
+// cmdCert handles `roost cert <status|refresh>` — inspecting and renewing the
 // image's TLS cert via acme.sh, then installing it into the image's certDir.
 func cmdCert(args []string) {
 	if len(args) == 0 {
@@ -32,11 +32,11 @@ func cmdCert(args []string) {
 }
 
 func certUsage() {
-	fmt.Print(`webhead cert — inspect and refresh the image's TLS cert
+	fmt.Print(`roost cert — inspect and refresh the image's TLS cert
 
 usage:
-  webhead cert status <image>            show the installed cert + expiry
-  webhead cert refresh <image> [--force] renew via acme.sh and install into the image
+  roost cert status <image>            show the installed cert + expiry
+  roost cert refresh <image> [--force] renew via acme.sh and install into the image
 
 refresh renews the image domain's Let's Encrypt cert (acme.sh, DNS-01) and copies
 fullchain.pem + privkey.pem into the image's cert dir. --force renews even if the
@@ -47,7 +47,7 @@ cert isn't near expiry (watch Let's Encrypt rate limits).
 // certImage loads an on-disk image (cert commands need a real dir + domain).
 func certImage(path string) *image.Image {
 	if path == "" {
-		fatal(fmt.Errorf("cert commands need an image path (the dir holding webhead.json)"))
+		fatal(fmt.Errorf("cert commands need an image path (the dir holding roost.json)"))
 	}
 	im, err := image.Load(path)
 	if err != nil {
@@ -83,14 +83,14 @@ func certStatus(args []string) {
 	fmt.Printf("image  : %s\ndomain : %s\ncertdir: %s\n", im.Dir, im.Manifest.Domain, im.CertDirPath())
 	c, err := readCert(full)
 	if err != nil {
-		fmt.Printf("cert   : none installed (%v)\n         HTTPS will use a self-signed fallback until you run `webhead cert refresh`.\n", err)
+		fmt.Printf("cert   : none installed (%v)\n         HTTPS will use a self-signed fallback until you run `roost cert refresh`.\n", err)
 		return
 	}
 	days := int(time.Until(c.NotAfter).Hours() / 24)
 	fmt.Printf("cert   : CN=%s  issuer=%s\n", c.Subject.CommonName, c.Issuer.Organization)
 	fmt.Printf("expires: %s  (%d days left)\n", c.NotAfter.Format("2006-01-02"), days)
 	if days < 21 {
-		fmt.Println("         ⚠ within renewal window — run `webhead cert refresh`.")
+		fmt.Println("         ⚠ within renewal window — run `roost cert refresh`.")
 	}
 }
 
@@ -161,6 +161,6 @@ func certRefresh(args []string) {
 	if c, err := readCert(full); err == nil {
 		days := int(time.Until(c.NotAfter).Hours() / 24)
 		fmt.Printf("==> installed: CN=%s, expires %s (%d days left)\n", c.Subject.CommonName, c.NotAfter.Format("2006-01-02"), days)
-		fmt.Println("    run `webhead run` to serve it, then verify the padlock at https://" + domain)
+		fmt.Println("    run `roost run` to serve it, then verify the padlock at https://" + domain)
 	}
 }

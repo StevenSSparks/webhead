@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FriendlyPortal</title>
+<style>
+  :root{ --bg:#0e1424; --panel:#161f38; --ink:#eaf0ff; --dim:#93a0c4; --teal:#25d0c0; --indigo:#6c8cff; --gold:#ffcf5c; --edge:#25314f; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{ font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif; color:var(--ink);
+    background:radial-gradient(circle at 15% -10%,rgba(108,140,255,.25),transparent 45%),
+               radial-gradient(circle at 90% 0%,rgba(37,208,192,.18),transparent 40%),var(--bg); min-height:100vh; }
+  a{ color:var(--teal); }
+  .portal{ background:var(--gold); color:#1a1400; padding:12px 18px; font-weight:600; text-align:center; font-size:14.5px; }
+  .portal b{ font-weight:800; } .portal code{ background:#1a1400; color:var(--gold); padding:2px 7px; border-radius:5px; }
+  nav{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; max-width:960px; margin:0 auto; padding:14px 18px; }
+  nav .brand{ font-weight:800; font-size:17px; margin-right:auto; } nav .brand span{ color:var(--teal); }
+  nav a{ text-decoration:none; color:var(--dim); font-weight:600; font-size:14px; padding:7px 11px; border-radius:8px; }
+  nav a:hover{ color:var(--ink); background:var(--panel); }
+  .wrap{ max-width:960px; margin:0 auto; padding:8px 18px 60px; }
+  .hero{ text-align:center; padding:36px 10px 20px; }
+  .hero h1{ font-size:clamp(30px,6vw,52px); line-height:1.05; letter-spacing:-.5px; }
+  .hero h1 span{ background:linear-gradient(90deg,var(--teal),var(--indigo)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+  .hero p{ color:var(--dim); font-size:clamp(15px,2.5vw,19px); max-width:640px; margin:14px auto 0; }
+  .chips{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:18px; }
+  .chip{ background:var(--panel); border:1px solid var(--edge); color:var(--dim); padding:6px 12px; border-radius:999px; font-size:13px; font-weight:600; }
+  h2.sec{ font-size:13px; text-transform:uppercase; letter-spacing:.14em; color:var(--dim); margin:40px 0 14px; }
+  .cards{ display:grid; grid-template-columns:1fr; gap:14px; }
+  @media(min-width:640px){ .cards{ grid-template-columns:repeat(3,1fr); } }
+  .card{ background:var(--panel); border:1px solid var(--edge); border-radius:14px; padding:18px; }
+  .card .ic{ font-size:26px; } .card h3{ margin:8px 0 5px; font-size:16px; } .card p{ color:var(--dim); font-size:13.5px; line-height:1.55; }
+  .big{ display:grid; grid-template-columns:1fr; gap:14px; margin-top:14px; }
+  @media(min-width:640px){ .big{ grid-template-columns:1fr 1fr; } }
+  a.bigcard{ display:block; text-decoration:none; color:var(--ink);
+    background:linear-gradient(160deg,#1b2740,#141d33); border:1px solid var(--edge); border-radius:16px; padding:22px; transition:transform .12s,border-color .12s; }
+  a.bigcard:hover{ transform:translateY(-2px); border-color:var(--teal); }
+  a.bigcard .ic{ font-size:30px; } a.bigcard h3{ margin:10px 0 6px; font-size:19px; } a.bigcard p{ color:var(--dim); font-size:14px; line-height:1.55; }
+  a.bigcard .go{ display:inline-block; margin-top:12px; color:var(--teal); font-weight:700; font-size:14px; }
+  .games{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+  @media(min-width:560px){ .games{ grid-template-columns:repeat(4,1fr); } }
+  a.game{ display:flex; flex-direction:column; align-items:center; gap:8px; text-decoration:none; color:var(--ink);
+    background:var(--panel); border:1px solid var(--edge); border-radius:12px; padding:18px 8px; transition:transform .1s,border-color .1s; }
+  a.game:hover{ transform:translateY(-2px); border-color:var(--indigo); }
+  a.game .ic{ font-size:30px; } a.game .nm{ font-size:13px; font-weight:700; }
+  footer{ color:var(--dim); font-size:13px; text-align:center; margin-top:46px; line-height:1.7; }
+</style>
+</head>
+<body>
+  <div class="portal">
+    📡 You're connected to <b>FriendlyPortal</b> — a self-contained hotspot with <b>no internet</b>.
+    It <b>is</b> its own website. Stay connected and browse <code>friendlyportal.local</code> to explore everything below.
+  </div>
+  <nav>
+    <div class="brand">📡 <span>FriendlyPortal</span> OS</div>
+    <a href="/">Home</a>
+    <a href="/how-it-works.html">How it works</a>
+    <a href="/setup-guide.html">Set up your own</a>
+    <a href="#games">Games</a>
+  </nav>
+
+  <div class="wrap">
+    <div class="hero">
+      <h1>A whole website<br>on a <span>tiny box</span>.</h1>
+      <p>FriendlyPortal is a live demo of <b>Roost</b> — an open-source “captive-portal
+      appliance in a box.” Everything you see is served from one small device with no
+      internet connection: a welcome portal, games, and this documentation itself.</p>
+      <div class="chips">
+        <span class="chip">📶 Captive portal</span>
+        <span class="chip">🌐 Own DNS</span>
+        <span class="chip">🔒 HTTPS</span>
+        <span class="chip">🖥️ SSH shell</span>
+        <span class="chip">📊 Live console</span>
+      </div>
+    </div>
+
+    <h2 class="sec">What this box is doing right now</h2>
+    <div class="cards">
+      <div class="card"><div class="ic">📶</div><h3>Captive portal</h3><p>When you joined the Wi-Fi, your device probed for internet. This box answered and popped up this page — the classic “sign-in” portal, but friendly.</p></div>
+      <div class="card"><div class="ic">🌐</div><h3>Its own DNS</h3><p>Every web address you type resolves to this box. That’s how <code>friendlyportal.local</code> works with no internet behind it.</p></div>
+      <div class="card"><div class="ic">🔒</div><h3>Real HTTPS</h3><p>It can serve a real, trusted certificate for its domain — the padlock is genuine, even though the site lives in your pocket.</p></div>
+      <div class="card"><div class="ic">🖥️</div><h3>A tiny shell</h3><p>SSH in and you get a little command line: <code>status</code>, <code>top</code>, <code>tail</code>, <code>ls</code>, <code>help</code>. Watch visitors in real time.</p></div>
+      <div class="card"><div class="ic">📊</div><h3>Live console</h3><p>A dashboard shows every web hit and DNS lookup as it happens — see the portal working live.</p></div>
+      <div class="card"><div class="ic">📦</div><h3>It’s just a folder</h3><p>This whole “OS” is an <i>image</i>: a folder with a config file and these web pages. Copy it, edit it, make your own.</p></div>
+    </div>
+
+    <h2 class="sec">Learn &amp; build</h2>
+    <div class="big">
+      <a class="bigcard" href="/how-it-works.html">
+        <div class="ic">🧠</div><h3>How it all works</h3>
+        <p>The captive-portal trick, the DNS funnel, HTTPS with a real cert, and the SSH shell — explained simply, with the actual flow this box uses.</p>
+        <span class="go">Read the walkthrough →</span>
+      </a>
+      <a class="bigcard" href="/setup-guide.html">
+        <div class="ic">🛠️</div><h3>Set up your own portal</h3>
+        <p>Get a domain, get a free trusted certificate, and make your own FriendlyPortal — then flash it onto a real ESP32 board. Step by step.</p>
+        <span class="go">Open the setup guide →</span>
+      </a>
+    </div>
+
+    <h2 class="sec" id="games">Have a play</h2>
+    <div class="games">
+      <a class="game" href="/games/pong.html"><span class="ic">🏓</span><span class="nm">Pong</span></a>
+      <a class="game" href="/games/reflex.html"><span class="ic">⚡</span><span class="nm">Reflex</span></a>
+      <a class="game" href="/games/dodge.html"><span class="ic">🟦</span><span class="nm">Dodge</span></a>
+      <a class="game" href="/games/memory.html"><span class="ic">🧠</span><span class="nm">Memory</span></a>
+    </div>
+
+    <footer>
+      FriendlyPortal is the demo image for <b>Roost</b> — an open-source captive-portal appliance emulator.<br>
+      Learn more &amp; get the code: <a href="https://github.com/StevenSSparks/roost">github.com/StevenSSparks/roost</a> · MIT licensed.
+    </footer>
+  </div>
+</body>
+</html>

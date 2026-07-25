@@ -9,11 +9,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/stevenssparks/webhead/image"
+	"github.com/stevenssparks/roost/image"
 )
 
 // ---------------------------------------------------------------------------
-// webhead doctor — check and install the hardware toolchain
+// roost doctor — check and install the hardware toolchain
 // ---------------------------------------------------------------------------
 
 func cmdDoctor(args []string) {
@@ -21,7 +21,7 @@ func cmdDoctor(args []string) {
 	install := fset.Bool("install", false, "install missing tools (Homebrew + esp32 core)")
 	fset.Parse(args)
 
-	fmt.Println("webhead doctor — hardware toolchain")
+	fmt.Println("roost doctor — hardware toolchain")
 	missing := []string{}
 	check := func(name string, bins ...string) {
 		for _, b := range bins {
@@ -46,16 +46,16 @@ func cmdDoctor(args []string) {
 	}
 
 	if len(missing) == 0 {
-		fmt.Println("\nAll set — `webhead build-image` and `webhead flash-board` are ready.")
+		fmt.Println("\nAll set — `roost build-image` and `roost flash-board` are ready.")
 		return
 	}
 	if !*install {
-		fmt.Printf("\nMissing: %s\nInstall them with:  webhead doctor --install\n", strings.Join(missing, ", "))
+		fmt.Printf("\nMissing: %s\nInstall them with:  roost doctor --install\n", strings.Join(missing, ", "))
 		return
 	}
 
 	if _, err := exec.LookPath("brew"); err != nil {
-		fatal(fmt.Errorf("Homebrew not found — install it from https://brew.sh, then re-run `webhead doctor --install`"))
+		fatal(fmt.Errorf("Homebrew not found — install it from https://brew.sh, then re-run `roost doctor --install`"))
 	}
 	fmt.Println("\n==> brew install arduino-cli esptool mklittlefs")
 	_ = run("brew", "install", "arduino-cli", "esptool", "mklittlefs")
@@ -67,7 +67,7 @@ func cmdDoctor(args []string) {
 		_ = run("arduino-cli", "core", "update-index")
 		_ = run("arduino-cli", "core", "install", "esp32:esp32")
 	}
-	fmt.Println("\n==> done. Re-run `webhead doctor` to verify.")
+	fmt.Println("\n==> done. Re-run `roost doctor` to verify.")
 }
 
 func esp32Core() string {
@@ -87,7 +87,7 @@ func esp32Core() string {
 }
 
 // ---------------------------------------------------------------------------
-// webhead build-image — image folder -> one flashable .bin
+// roost build-image — image folder -> one flashable .bin
 // ---------------------------------------------------------------------------
 
 func cmdBuildImage(args []string) {
@@ -106,7 +106,7 @@ func cmdBuildImage(args []string) {
 		imgArg = fset.Arg(0)
 	}
 	if imgArg == "" {
-		fatal(fmt.Errorf("build-image needs an image path (the dir holding webhead.json + data/)"))
+		fatal(fmt.Errorf("build-image needs an image path (the dir holding roost.json + data/)"))
 	}
 
 	im, err := image.Load(imgArg)
@@ -119,7 +119,7 @@ func cmdBuildImage(args []string) {
 	mk, e2 := exec.LookPath("mklittlefs")
 	esp, e3 := findEsptool()
 	if e1 != nil || e2 != nil || e3 != nil {
-		fatal(fmt.Errorf("missing hardware tools — run:  webhead doctor --install"))
+		fatal(fmt.Errorf("missing hardware tools — run:  roost doctor --install"))
 	}
 
 	if *partition != "" {
@@ -146,7 +146,7 @@ func cmdBuildImage(args []string) {
 	}
 	defer cleanup()
 
-	fwout := filepath.Join(os.TempDir(), "webhead-build-fw")
+	fwout := filepath.Join(os.TempDir(), "roost-build-fw")
 	os.RemoveAll(fwout)
 	cargs := []string{"compile", "--fqbn", *fqbn, "--output-dir", fwout}
 	if *partition != "" {
@@ -166,7 +166,7 @@ func cmdBuildImage(args []string) {
 		fatal(fmt.Errorf("could not locate build outputs (boot=%q parts=%q app=%q boot_app0=%q)", boot, parts, app, bootapp0))
 	}
 
-	lfs := filepath.Join(os.TempDir(), "webhead-build-littlefs.bin")
+	lfs := filepath.Join(os.TempDir(), "roost-build-littlefs.bin")
 	fmt.Println("==> building LittleFS from data/")
 	if err := run(mk, "-c", dataDir, "-p", "256", "-b", "4096", "-s", *size, lfs); err != nil {
 		fatal(fmt.Errorf("mklittlefs failed: %w", err))
@@ -183,12 +183,12 @@ func cmdBuildImage(args []string) {
 	}
 
 	fmt.Printf("\nbuilt: %s\n", *out)
-	fmt.Printf("flash it:  webhead flash-board %s --image %s --confirm\n", imgArg, *out)
+	fmt.Printf("flash it:  roost flash-board %s --image %s --confirm\n", imgArg, *out)
 	fmt.Printf("      or:  esptool --chip %s -p <PORT> write_flash 0x0 %s\n", *chip, *out)
 }
 
 // prepareSketch returns a temp working copy of the firmware sketch (named after
-// its .ino so arduino-cli accepts it) with a generated wh_config.h carrying the
+// its .ino so arduino-cli accepts it) with a generated roost_config.h carrying the
 // image's SSID/domain. Source: --sketch, else <image>/firmware, else the
 // embedded reference firmware.
 func prepareSketch(sketchFlag string, im *image.Image) (workDir, name string, cleanup func(), err error) {
@@ -235,7 +235,7 @@ func prepareSketch(sketchFlag string, im *image.Image) (workDir, name string, cl
 	}
 
 	base := strings.TrimSuffix(ino, ".ino")
-	root, err := os.MkdirTemp("", "webhead-sketch-")
+	root, err := os.MkdirTemp("", "roost-sketch-")
 	if err != nil {
 		return "", "", cleanup, err
 	}
@@ -245,10 +245,10 @@ func prepareSketch(sketchFlag string, im *image.Image) (workDir, name string, cl
 	for n, b := range srcFiles {
 		os.WriteFile(filepath.Join(dir, n), b, 0644)
 	}
-	// generate wh_config.h from the manifest identity
-	cfg := fmt.Sprintf("// generated by `webhead build-image`\n#define WH_SSID %q\n#define WH_DOMAIN %q\n",
+	// generate roost_config.h from the manifest identity
+	cfg := fmt.Sprintf("// generated by `roost build-image`\n#define RO_SSID %q\n#define RO_DOMAIN %q\n",
 		im.Manifest.SSID, im.Manifest.Domain)
-	os.WriteFile(filepath.Join(dir, "wh_config.h"), []byte(cfg), 0644)
+	os.WriteFile(filepath.Join(dir, "roost_config.h"), []byte(cfg), 0644)
 	return dir, base, cleanup, nil
 }
 

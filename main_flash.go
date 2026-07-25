@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/stevenssparks/webhead/image"
+	"github.com/stevenssparks/roost/image"
 )
 
 // cmdFlashBoard builds a LittleFS image from an image's data/ payload and flashes
@@ -49,7 +49,7 @@ func cmdFlashBoard(args []string) {
 	}
 	dataDir := filepath.Join(im.Dir, "data")
 
-	// Let webhead figure out the offset/size from the named partition scheme so
+	// Let roost figure out the offset/size from the named partition scheme so
 	// nobody has to hand-enter hex.
 	if *partition != "" {
 		if off, sz, err := lookupPartitionFS(*partition); err == nil {
@@ -70,7 +70,7 @@ func cmdFlashBoard(args []string) {
 		fmt.Printf("    payload  : %d KB of %d KB partition (%d%%)\n", used/1024, partBytes/1024, pct)
 		if used > partBytes {
 			fmt.Printf("    ⚠ payload is LARGER than the FS partition. Use a bigger scheme, e.g.\n")
-			fmt.Printf("      webhead flash-board %s --partition large_spiffs_8MB\n", imgArg)
+			fmt.Printf("      roost flash-board %s --partition large_spiffs_8MB\n", imgArg)
 		}
 	}
 
@@ -102,7 +102,7 @@ func cmdFlashBoard(args []string) {
 		missing = true
 	}
 
-	tmp := filepath.Join(os.TempDir(), "webhead-littlefs.bin")
+	tmp := filepath.Join(os.TempDir(), "roost-littlefs.bin")
 	buildCmd := fmt.Sprintf("%s -c %s -p %d -b %d -s %s %s", orName(mklittlefs, "mklittlefs"), dataDir, *page, *block, *size, tmp)
 	flashCmd := fmt.Sprintf("%s --chip %s --port %s write_flash %s %s", orName(esptool, "esptool"), *chip, orName(*port, "<port>"), *offset, tmp)
 
@@ -141,7 +141,7 @@ func cmdMonitor(args []string) {
 
 	acli, err := exec.LookPath("arduino-cli")
 	if err != nil {
-		fatal(fmt.Errorf("arduino-cli not found — run: webhead doctor --install"))
+		fatal(fmt.Errorf("arduino-cli not found — run: roost doctor --install"))
 	}
 	p := *port
 	if p == "" {
@@ -160,11 +160,11 @@ func cmdMonitor(args []string) {
 // at offset 0x0.
 func flashFullImage(path, chip, port string, confirm bool) {
 	if _, err := os.Stat(path); err != nil {
-		fatal(fmt.Errorf("image not found: %s (build it with `webhead build-image`)", path))
+		fatal(fmt.Errorf("image not found: %s (build it with `roost build-image`)", path))
 	}
 	esptool, err := findEsptool()
 	if err != nil {
-		fatal(fmt.Errorf("esptool not found — run: webhead doctor --install"))
+		fatal(fmt.Errorf("esptool not found — run: roost doctor --install"))
 	}
 	if port == "" {
 		port = detectPort()
