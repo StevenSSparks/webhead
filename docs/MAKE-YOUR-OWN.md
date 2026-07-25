@@ -219,6 +219,23 @@ portal is live, no laptop needed.
 > **Just updating the website?** After the firmware's on the board once, you can
 > reflash only the filesystem: `webhead flash-board my-portal --partition <same> --confirm`.
 
+### HTTPS on the board (real padlock)
+
+The reference firmware serves **real HTTPS on 443, auto-enabled** when your image
+ships a certificate — no extra flags. To get it:
+
+1. Put your cert in **`my-portal/data/certs/`** as `fullchain.pem` + `privkey.pem`
+   (note: under `data/`, so it lands on the device's filesystem), and set
+   `"certDir": "data/certs"` in `webhead.json`.
+2. Get that cert with `webhead cert refresh` (see the HTTPS section above) — issue
+   it for your domain, ideally with a wildcard (`-d you.net -d '*.you.net'`) so
+   `www.` matches too.
+3. `webhead build-image` + flash as normal.
+
+On the board: browsing `http://your.domain` redirects to `https://`, and the
+padlock is valid (the full chain is served from flash; the root is already in the
+client). No internet needed. If no certs are present, the board just runs HTTP.
+
 ---
 
 ## Troubleshooting

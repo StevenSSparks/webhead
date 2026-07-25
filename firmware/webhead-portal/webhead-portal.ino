@@ -18,6 +18,8 @@
 #include <DNSServer.h>
 #include <WebServer.h>
 #include <LittleFS.h>
+#include <esp_https_server.h>
+#include <esp_log.h>
 
 // `webhead build-image` drops a wh_config.h next to this sketch with the image's
 // SSID/domain. If it's absent (e.g. opened directly in the IDE), the defaults
@@ -48,6 +50,7 @@ WebServer http(80);
 
 uint32_t bootMs = 0;
 uint32_t hits = 0;
+bool     httpsUp = false;      // set true if HTTPS started (certs present)
 
 String contentType(const String& p) {
   if (p.endsWith(".html")) return "text/html";
@@ -74,9 +77,97 @@ void redirectPortal() {
   http.send(302, "text/plain", "");
 }
 
-void handleRoot()  { if (!sendFile("/index.html")) http.send(200, "text/html", "<h1>Webhead</h1><p>Upload a filesystem image.</p>"); }
+// ---------------- HTTPS on 443 (IDF esp_https_server) ----------------
+// Auto-enabled when the image ships /certs/fullchain.pem + /certs/privkey.pem
+// (put them in your image's data/certs/). One firmware, works with or without.
+static httpd_handle_t g_https = NULL;
+
+static char* readWholeFile(const char* p, size_t* lenWithNul) {
+  if (!LittleFS.exists(p)) return NULL;
+  File f = LittleFS.open(p, "r");
+  size_t sz = f.size();
+  char* buf = (char*)malloc(sz + 1);
+  if (!buf) { f.close(); return NULL; }
+  f.read((uint8_t*)buf, sz);
+  buf[sz] = 0;
+  f.close();
+  *lenWithNul = sz + 1;                 // PEM length must include the NUL
+  return buf;
+}
+
+static esp_err_t httpsServe(httpd_req_t* req) {
+  String path = req->uri;
+  int q = path.indexOf('?'); if (q >= 0) path = path.substring(0, q);
+  if (path.length() == 0 || path == "/") path = "/index.html";
+  else if (path.endsWith("/"))           path += "index.html";
+
+  if (!LittleFS.exists(path)) {          // captive/unknown -> portal
+    httpd_resp_set_status(req, "302 Found");
+    httpd_resp_set_hdr(req, "Location", "/");
+    httpd_resp_send(req, "", 0);
+    return ESP_OK;
+  }
+  File f = LittleFS.open(path, "r");
+  String ctype = contentType(path);      // MUST stay alive until the response is sent
+  httpd_resp_set_type(req, ctype.c_str());
+  uint8_t buf[1460];
+  size_t n;
+  esp_err_t rc = ESP_OK;
+  while ((n = f.read(buf, sizeof(buf))) > 0) {
+    rc = httpd_resp_send_chunk(req, (const char*)buf, n);
+    if (rc != ESP_OK) break;
+  }
+  f.close();
+  if (rc == ESP_OK) { httpd_resp_send_chunk(req, NULL, 0); hits++; }
+  return rc;
+}
+
+void startHttpsIfCerts() {
+  size_t certLen = 0, keyLen = 0;
+  char* cert = readWholeFile("/certs/fullchain.pem", &certLen);
+  char* key  = readWholeFile("/certs/privkey.pem",  &keyLen);
+  if (!cert || !key) {
+    Serial.println("https: no /certs/*.pem in the image — running HTTP only");
+    return;
+  }
+  httpd_ssl_config_t conf   = HTTPD_SSL_CONFIG_DEFAULT();
+  conf.servercert           = (const uint8_t*)cert;
+  conf.servercert_len       = certLen;
+  conf.prvtkey_pem          = (const uint8_t*)key;
+  conf.prvtkey_len          = keyLen;
+  conf.httpd.uri_match_fn   = httpd_uri_match_wildcard;
+  conf.httpd.max_uri_handlers = 4;
+  conf.httpd.max_open_sockets = 3;
+  conf.httpd.stack_size       = 12288;
+  if (httpd_ssl_start(&g_https, &conf) != ESP_OK) {
+    Serial.printf("https: start failed — free heap %u KB\n", ESP.getFreeHeap() / 1024);
+    return;
+  }
+  httpd_uri_t all = {};
+  all.uri = "/*"; all.method = HTTP_GET; all.handler = httpsServe; all.user_ctx = NULL;
+  httpd_register_uri_handler(g_https, &all);
+  httpsUp = true;
+  Serial.printf("https: started on 443  (heap %u KB free)\n", ESP.getFreeHeap() / 1024);
+}
+
+// If a visitor asked for our domain over plain HTTP and HTTPS is up, bounce them
+// to HTTPS so they land on the padlock. Returns true if it redirected.
+bool redirectToHttps() {
+  if (!httpsUp) return false;
+  String host = http.hostHeader();
+  if (host == MY_DOMAIN || host == String("www.") + MY_DOMAIN) {
+    http.sendHeader("Location", String("https://") + host + http.uri(), true);
+    http.send(301, "text/plain", "");
+    return true;
+  }
+  return false;
+}
+
+void handleRoot()  { if (redirectToHttps()) return;
+                     if (!sendFile("/index.html")) http.send(200, "text/html", "<h1>Webhead</h1><p>Upload a filesystem image.</p>"); }
 void handleAdmin() { if (!sendFile("/admin.html")) http.send(404, "text/plain", "no admin.html"); }
 void handleNotFound() {
+  if (redirectToHttps()) return;
   String uri = http.uri();
   if (sendFile(uri)) return;
   redirectPortal();               // captive-portal probes + unknown -> portal
@@ -88,8 +179,8 @@ void prompt() { Serial.print("\nwebhead# "); }
 void runCmd(String c) {
   c.trim();
   if (c == "help")        Serial.println("help status ls cat <f> free uptime clients reboot");
-  else if (c == "status") { Serial.printf("ssid %s  domain %s  ip %s\nuptime %lus  clients %d  hits %u  heap %u KB\n",
-                              AP_SSID, MY_DOMAIN, apIP.toString().c_str(), (millis()-bootMs)/1000,
+  else if (c == "status") { Serial.printf("ssid %s  domain %s  ip %s  https %s\nuptime %lus  clients %d  hits %u  heap %u KB\n",
+                              AP_SSID, MY_DOMAIN, apIP.toString().c_str(), httpsUp ? "on" : "off", (millis()-bootMs)/1000,
                               WiFi.softAPgetStationNum(), hits, ESP.getFreeHeap()/1024); }
   else if (c == "clients")Serial.printf("%d connected\n", WiFi.softAPgetStationNum());
   else if (c == "free")   Serial.printf("heap %u KB\n", ESP.getFreeHeap()/1024);
@@ -103,6 +194,10 @@ void runCmd(String c) {
 void setup() {
   Serial.begin(115200);
   delay(300);
+  // quiet the per-connection TLS errors from captive-portal probes
+  esp_log_level_set("esp-tls-mbedtls", ESP_LOG_NONE);
+  esp_log_level_set("esp_https_server", ESP_LOG_NONE);
+  esp_log_level_set("httpd", ESP_LOG_NONE);
   if (!LittleFS.begin(true)) Serial.println("LittleFS mount failed — flash a filesystem image");
   bootMs = millis();
 
@@ -121,7 +216,10 @@ void setup() {
   http.onNotFound(handleNotFound);
   http.begin();
 
-  Serial.printf("\n=== WEBHEAD PORTAL up ===  SSID \"%s\"  domain %s\n", AP_SSID, MY_DOMAIN);
+  startHttpsIfCerts();            // HTTPS on 443 if the image ships certs
+
+  Serial.printf("\n=== WEBHEAD PORTAL up ===  SSID \"%s\"  domain %s  https %s\n",
+                AP_SSID, MY_DOMAIN, httpsUp ? "on" : "off");
   prompt();
 }
 
